@@ -1,0 +1,284 @@
+@page "/categories/add"
+@rendermode InteractiveServer
+@using SharedKernel.DTOs.Inventory
+@inject VikashIronix_WebUI.Services.Inventory.IInventoryService InventoryService
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<PageTitle>Category Management - The Iron Ledger</PageTitle>
+
+<MudStack Row="true" AlignItems="AlignItems.Center" Spacing="0" Class="mb-5" Style="border-bottom: 1px solid var(--mud-palette-divider);">
+    <MudButton Variant="Variant.Text" Style="color: var(--mud-palette-text-secondary); border-radius: 0; padding: 10px 18px; text-transform: none; font-weight: 700;">Dashboard</MudButton>
+    <MudButton Variant="Variant.Text" Style="color: var(--mud-palette-primary); border-radius: 0; padding: 10px 18px; border-bottom: 2px solid var(--mud-palette-primary); text-transform: none; font-weight: 700;">Configuration</MudButton>
+    <MudButton Variant="Variant.Text" Style="color: var(--mud-palette-text-secondary); border-radius: 0; padding: 10px 18px; text-transform: none; font-weight: 700;">Materials</MudButton>
+    <MudButton Variant="Variant.Text" Style="color: var(--mud-palette-text-secondary); border-radius: 0; padding: 10px 18px; text-transform: none; font-weight: 700;">Reports</MudButton>
+    <MudSpacer />
+</MudStack>
+
+<MudGrid Spacing="4">
+
+    <!-- LEFT: New Category Form -->
+    <MudItem xs="12" md="4">
+        <MudPaper Elevation="0" Style="border: 1px solid var(--mud-palette-divider); border-radius: var(--mud-default-borderradius);" Class="pa-6">
+
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mb-1">
+                <MudIcon Icon="@Icons.Material.Filled.AccountTree" Color="Color.Primary" Size="Size.Small" />
+                <MudText Typo="Typo.h6" Style="font-family: var(--mud-typography-h6-font-family); font-weight: 700;">New Category</MudText>
+            </MudStack>
+            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-6" Style="display: block;">Register a new primary or nested material tier.</MudText>
+
+            <MudStack Spacing="3">
+                <!-- Category Name -->
+                <div>
+                    <MudText Style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.1em; color: var(--mud-palette-text-secondary); margin-bottom: 6px; display: block;">CLASSIFICATION NAME</MudText>
+                    <MudTextField @bind-Value="CategoryName" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                  Placeholder="e.g. HR Sheets" FullWidth="true" />
+                </div>
+
+                <!-- HSN Code Default -->
+                <div>
+                    <MudText Style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.1em; color: var(--mud-palette-text-secondary); margin-bottom: 6px; display: block;">DEFAULT HSN / SAC CODE</MudText>
+                    <MudTextField @bind-Value="HsnCode" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                  InputType="InputType.Number" Placeholder="7208" FullWidth="true" />
+                </div>
+
+                @if (!string.IsNullOrEmpty(ErrorMsg))
+                {
+                    <MudAlert Severity="Severity.Error" Dense="true" Class="mb-2">@ErrorMsg</MudAlert>
+                }
+
+                @if (!string.IsNullOrEmpty(SuccessMsg))
+                {
+                    <MudAlert Severity="Severity.Success" Dense="true" Class="mb-2">@SuccessMsg</MudAlert>
+                }
+
+                <!-- Submit & Cancel Buttons -->
+                <MudStack Row="true" Spacing="2">
+                    <MudButton Variant="Variant.Filled" FullWidth="true" OnClick="HandleSubmit" StartIcon="@(EditingCategoryId == null ? Icons.Material.Filled.Save : Icons.Material.Filled.SystemUpdateAlt)"
+                               Color="Color.Primary" Style="font-weight: 800; border-radius: var(--mud-default-borderradius); padding: 12px; letter-spacing: 0.05em; margin-top: 4px; flex: 2; text-transform: none;">
+                        @if (IsSaving)
+                        {
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                            <span>PROCESSING...</span>
+                        }
+                        else
+                        {
+                            <span>@(EditingCategoryId == null ? "Register Framework" : "Update Architecture")</span>
+                        }
+                    </MudButton>
+                    
+                    @if (EditingCategoryId != null)
+                    {
+                        <MudButton Variant="Variant.Outlined" OnClick="CancelEdit" Color="Color.Error"
+                                   Style="border-radius: var(--mud-default-borderradius); margin-top: 4px; flex: 1; padding: 12px; font-weight: 700; text-transform: none;">
+                            Cancel
+                        </MudButton>
+                    }
+                </MudStack>
+            </MudStack>
+        </MudPaper>
+    </MudItem>
+
+    <!-- RIGHT: Hierarchy Catalog Table -->
+    <MudItem xs="12" md="8">
+        <MudPaper Elevation="0" Style="border: 1px solid var(--mud-palette-divider); border-radius: var(--mud-default-borderradius);" Class="pa-6">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-1" Justify="Justify.SpaceBetween">
+                <div>
+                    <MudText Typo="Typo.h6" Style="font-family: var(--mud-typography-h6-font-family); font-weight: 700;">Classification Tree</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Architectural material groups mapped to standard indices.</MudText>
+                </div>
+            </MudStack>
+
+            <!-- Filter row -->
+            <MudStack Row="true" Spacing="2" Class="mb-4 mt-3" AlignItems="AlignItems.Center">
+                <MudTextField @bind-Value="SearchQuery" Placeholder="Search taxonomies..."
+                               Variant="Variant.Outlined" Margin="Margin.Dense"
+                               Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                               Style="flex: 1;" FullWidth="false" />
+                <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Secondary" Style="background: var(--mud-palette-background-grey); border-radius: 8px;" />
+            </MudStack>
+
+            <!-- Table -->
+            <MudTable Items="@FilteredCategories" Hover="true" Elevation="0" Style="background: transparent;"
+                      Dense="true" Breakpoint="Breakpoint.Sm">
+                <HeaderContent>
+                    <MudTh Style="color: var(--mud-palette-text-secondary); font-size: 0.68rem; letter-spacing: 0.08em; font-weight: 800;">NOMENCLATURE</MudTh>
+                    <MudTh Style="color: var(--mud-palette-text-secondary); font-size: 0.68rem; letter-spacing: 0.08em; font-weight: 800;">HIERARCHY DECK</MudTh>
+                    <MudTh Style="color: var(--mud-palette-text-secondary); font-size: 0.68rem; letter-spacing: 0.08em; font-weight: 800;">DEFAULT INDEX</MudTh>
+                    <MudTh Style="color: var(--mud-palette-text-secondary); font-size: 0.68rem; letter-spacing: 0.08em; font-weight: 800;">SKUs</MudTh>
+                    <MudTh Style="color: var(--mud-palette-text-secondary); font-size: 0.68rem; letter-spacing: 0.08em; font-weight: 800;">ACTIONS</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd>
+                        <MudText Typo="Typo.body2" Style="font-weight: 600;">@context.Name</MudText>
+                    </MudTd>
+                    <MudTd>
+                        <MudChip T="string" Size="Size.Small" Color="Color.Primary" Style="font-size: 0.62rem; font-weight: 800; letter-spacing: 0.05em;" Variant="Variant.Text">PRIMARY GROUP</MudChip>
+                    </MudTd>
+                    <MudTd>
+                        <MudText Style="font-family: monospace; font-weight: 700; font-size: 0.85rem;">HSN @(context.HsnCode ?? "N/A")</MudText>
+                    </MudTd>
+                    <MudTd>
+                        <MudText Style="font-size: 0.8rem; font-weight: 600;">Active</MudText>
+                    </MudTd>
+                    <MudTd>
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Info" OnClick="() => EditCategory(context.Id)" />
+                        <MudIconButton Icon="@Icons.Material.Filled.DeleteOutline" Size="Size.Small" Color="Color.Error" OnClick="() => DeleteCategory(context.Id)" />
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+
+            <!-- Footer stats -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--mud-palette-divider);">
+                <MudStack Row="true" Spacing="4">
+                    <div>
+                        <MudText Style="font-size: 0.62rem; color: var(--mud-palette-text-secondary); letter-spacing: 0.08em;">TOTAL TIERS</MudText>
+                        <MudText Style="font-weight: 700;">@Categories.Count Entities</MudText>
+                    </div>
+                </MudStack>
+            </div>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code {
+    string CategoryName = "";
+    string HsnCode = "";
+    string SearchQuery = "";
+    bool IsSaving = false;
+    string SuccessMsg = "";
+    string ErrorMsg = "";
+    Guid? EditingCategoryId = null;
+
+    List<CategoryDto> Categories = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        Categories = await InventoryService.GetCategoriesAsync();
+    }
+
+    IEnumerable<CategoryDto> FilteredCategories => Categories.Where(c => c.IsRoot).Where(c => string.IsNullOrWhiteSpace(SearchQuery) || c.Name.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase) || (c.HsnCode != null && c.HsnCode.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase)));
+
+    void EditCategory(Guid id)
+    {
+        var target = Categories.FirstOrDefault(c => c.Id == id);
+        if (target != null)
+        {
+            EditingCategoryId = target.Id;
+            CategoryName = target.Name;
+            HsnCode = target.HsnCode ?? "";
+            SuccessMsg = "";
+            ErrorMsg = "";
+        }
+    }
+
+    void CancelEdit()
+    {
+        EditingCategoryId = null;
+        CategoryName = "";
+        HsnCode = "";
+        ErrorMsg = "";
+        SuccessMsg = "";
+    }
+
+    async Task DeleteCategory(Guid id)
+    {
+        var target = Categories.FirstOrDefault(c => c.Id == id);
+        if (target == null) return;
+
+        var parameters = new DialogParameters<DeleteConfirmationDialog>
+        {
+            { x => x.ContentText, $"Are you sure you want to permanently delete the classification '{target.Name}'?" }
+        };
+
+        var dialog = await DialogService.ShowAsync<DeleteConfirmationDialog>("Confirm Deletion", parameters);
+        var result = await dialog.Result;
+
+        if (result != null && !result.Canceled)
+        {
+            IsSaving = true;
+            StateHasChanged();
+            
+            bool success = await InventoryService.DeleteCategoryAsync(id);
+            if (success)
+            {
+                Categories = await InventoryService.GetCategoriesAsync();
+                SuccessMsg = $"Taxonomy '{target.Name}' successfully deleted.";
+                
+                // If we were actively editing the deleted item, clear the form
+                if (EditingCategoryId == id)
+                {
+                    CancelEdit();
+                }
+            }
+            else
+            {
+                ErrorMsg = $"Failed to delete '{target.Name}'.";
+            }
+            
+            IsSaving = false;
+            StateHasChanged();
+        }
+    }
+
+    async Task HandleSubmit()
+    {
+        IsSaving = true;
+        SuccessMsg = "";
+        ErrorMsg = "";
+        
+        if (EditingCategoryId == null)
+        {
+            // Creation Flow
+            var createRequest = new CreateCategoryRequest
+            {
+                Name = CategoryName,
+                ParentId = null,
+                HsnCode = string.IsNullOrWhiteSpace(HsnCode) ? null : HsnCode,
+                IsRoot = true
+            };
+            
+            var validator = new CreateCategoryRequestValidator();
+            var valResult = validator.Validate(createRequest);
+            if (!valResult.IsValid)
+            {
+                ErrorMsg = string.Join(" | ", valResult.Errors.Select(e => e.ErrorMessage));
+                IsSaving = false;
+                return;
+            }
+            
+            await InventoryService.CreateCategoryAsync(createRequest);
+            SuccessMsg = $"Taxonomy '{CategoryName}' structurally linked.";
+        }
+        else
+        {
+            // Update Flow
+            var updateRequest = new UpdateCategoryRequest
+            {
+                Id = EditingCategoryId.Value,
+                Name = CategoryName,
+                ParentId = null,
+                HsnCode = string.IsNullOrWhiteSpace(HsnCode) ? null : HsnCode,
+                IsRoot = true
+            };
+            
+            var validator = new UpdateCategoryRequestValidator();
+            var valResult = validator.Validate(updateRequest);
+            if (!valResult.IsValid)
+            {
+                ErrorMsg = string.Join(" | ", valResult.Errors.Select(e => e.ErrorMessage));
+                IsSaving = false;
+                return;
+            }
+            
+            await InventoryService.UpdateCategoryAsync(updateRequest);
+            SuccessMsg = $"Taxonomy '{CategoryName}' successfully updated.";
+        }
+        
+        Categories = await InventoryService.GetCategoriesAsync();
+        IsSaving = false;
+        var msg = SuccessMsg; // preserve success msg before clear
+        CancelEdit();
+        SuccessMsg = msg; 
+    }
+}

@@ -1,0 +1,60 @@
+@using SharedKernel.DTOs.Users
+
+<MudDialog Style="background: #1e2020; color: white;">
+    <DialogContent>
+        <MudForm @ref="form" @bind-IsValid="@success">
+            <MudTextField @bind-Value="Model.FirstName" Label="First Name" Required="true" RequiredError="First Name is required" 
+                          Variant="Variant.Outlined" Class="mb-4" />
+            <MudTextField @bind-Value="Model.LastName" Label="Last Name" Required="true" RequiredError="Last Name is required" 
+                          Variant="Variant.Outlined" Class="mb-4" />
+                          
+            <MudTextField @bind-Value="Model.Email" Label="Email Address" Required="true" RequiredError="Email is required" 
+                          Variant="Variant.Outlined" Class="mb-4" />
+                          
+            <MudSelect @bind-Value="Model.Role" Label="Role" Required="true" RequiredError="Role is required" Variant="Variant.Outlined" Class="mb-4">
+                <MudSelectItem Value="@("Super Admin")">Super Admin</MudSelectItem>
+                <MudSelectItem Value="@("Trade Manager")">Trade Manager</MudSelectItem>
+                <MudSelectItem Value="@("Accountant")">Accountant</MudSelectItem>
+                <MudSelectItem Value="@("Warehouse Staff")">Warehouse Staff</MudSelectItem>
+            </MudSelect>
+
+            <MudSwitch @bind-Value="Model.IsActive" Label="Is Active Account" Color="Color.Success" Class="mb-4" />
+
+            @if (IsNewUser)
+            {
+                <MudTextField T="string" Label="Temporary Password" Required="true" RequiredError="Password is required" 
+                              Variant="Variant.Outlined" Class="mb-4" InputType="InputType.Password" />
+            }
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" Variant="Variant.Text" Style="color: #bcbcbc">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit" Variant="Variant.Filled" Style="background: linear-gradient(135deg, #6ee591, #50c878); color: #00210c">
+            @(IsNewUser ? "Create User" : "Save Changes")
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
+    
+    [Parameter] public UserDto Model { get; set; } = new();
+    [Parameter] public bool IsNewUser { get; set; } = true;
+
+    private MudForm form = null!;
+    private bool success;
+
+    private async Task Submit()
+    {
+        await form.Validate();
+        if (success)
+        {
+            MudDialog.Close(DialogResult.Ok(Model));
+        }
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+}

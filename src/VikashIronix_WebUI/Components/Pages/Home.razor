@@ -1,0 +1,178 @@
+@page "/"
+@rendermode InteractiveServer
+
+<PageTitle>Executive Dashboard - The Iron Ledger</PageTitle>
+
+<!-- <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-8" Justify="Justify.SpaceBetween">
+    <div>
+        <MudText Typo="Typo.h5" Style="font-family: var(--mud-typography-h5-font-family); font-weight: 800;">Executive Dashboard</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary">Vikash Sharma · Managing Director · Enterprise Instance Active</MudText>
+    </div>
+    <MudChip T="string" Icon="@Icons.Material.Filled.TrendingUp" Color="Color.Success" Size="Size.Small" Variant="Variant.Text" Style="font-weight: 800;">Market Integrity: Bullish +2.4%</MudChip>
+</MudStack> -->
+
+<!-- KPI Row -->
+<MudGrid Spacing="4" Class="mb-6">
+    <MudItem xs="12" sm="6" md="3">
+        <MudPaper Elevation="0" Style="border: 1px solid var(--mud-palette-divider); border-radius: var(--mud-default-borderradius); border-left: 4px solid var(--mud-palette-success);" Class="pa-6">
+            <MudText Style="font-size: 0.65rem; font-weight: 800; color: var(--mud-palette-text-secondary); letter-spacing: 0.1em; text-transform: uppercase;">TODAY'S REVENUE</MudText>
+            <MudText Typo="Typo.h4" Color="Color.Success" Style="font-family: var(--mud-typography-h4-font-family); font-weight: 900;" Class="mt-2">₹12,84,500</MudText>
+            <MudText Typo="Typo.caption" Color="Color.Success" Style="font-weight: 700;">+8.3% vs yesterday</MudText>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12" sm="6" md="3">
+        <MudPaper Elevation="0" Style="border: 1px solid var(--mud-palette-divider); border-radius: var(--mud-default-borderradius); border-left: 4px solid var(--mud-palette-info);" Class="pa-6">
+            <MudText Style="font-size: 0.65rem; font-weight: 800; color: var(--mud-palette-text-secondary); letter-spacing: 0.1em; text-transform: uppercase;">TOTAL STOCK</MudText>
+            <MudText Typo="Typo.h4" Style="font-family: var(--mud-typography-h4-font-family); font-weight: 900;" Class="mt-2">4,280 MT</MudText>
+            <MudText Typo="Typo.caption" Color="Color.Secondary">Across 3 critical nodes</MudText>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12" sm="6" md="3">
+        <MudPaper Elevation="0" Style="border: 1px solid var(--mud-palette-divider); border-radius: var(--mud-default-borderradius); border-left: 4px solid var(--mud-palette-error);" Class="pa-6">
+            <MudText Style="font-size: 0.65rem; font-weight: 800; color: var(--mud-palette-text-secondary); letter-spacing: 0.1em; text-transform: uppercase;">OUTSTANDING UDHAAR</MudText>
+            <MudText Typo="Typo.h4" Color="Color.Error" Style="font-family: var(--mud-typography-h4-font-family); font-weight: 900;" Class="mt-2">₹84,20,000</MudText>
+            <MudText Typo="Typo.caption" Color="Color.Error" Style="font-weight: 700;">Due in 15 days: ₹12.4L</MudText>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12" sm="6" md="3">
+        <MudPaper Elevation="0" Style="border: 1px solid var(--mud-palette-divider); border-radius: var(--mud-default-borderradius); border-left: 4px solid var(--mud-palette-primary);" Class="pa-6">
+            <MudText Style="font-size: 0.65rem; font-weight: 800; color: var(--mud-palette-text-secondary); letter-spacing: 0.1em; text-transform: uppercase;">NET ASSETS</MudText>
+            <MudText Typo="Typo.h4" Color="Color.Primary" Style="font-family: var(--mud-typography-h4-font-family); font-weight: 900;" Class="mt-2">₹2.45 Cr</MudText>
+            <MudText Typo="Typo.caption" Color="Color.Secondary">Stock collateral valuation</MudText>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+<MudGrid Spacing="4">
+    <!-- Top Customers -->
+    <MudItem xs="12" md="5">
+        <MudPaper Elevation="0" Style="border: 1px solid var(--mud-palette-divider); border-radius: var(--mud-default-borderradius);" Class="pa-6">
+            <MudText Typo="Typo.h6" Class="mb-6" Style="font-family: var(--mud-typography-h6-font-family); font-weight: 700;">Top Customers by Volume</MudText>
+            <MudStack Spacing="1">
+                @foreach (var c in TopCustomers)
+                {
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px; border-radius: 8px; border-bottom: 1px solid var(--mud-palette-divider);">
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="4">
+                            <MudAvatar Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small" Style="font-weight: 800; font-size: 0.7rem;">
+                                @c.Name.Substring(0, 1).ToUpper()
+                            </MudAvatar>
+                            <div>
+                                <MudText Typo="Typo.body2" Style="font-weight: 700;">@c.Name</MudText>
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">@c.Tier</MudText>
+                            </div>
+                        </MudStack>
+                        <MudText Typo="Typo.body2" Color="Color.Primary" Style="font-weight: 800; font-family: monospace;">@c.Volume</MudText>
+                    </div>
+                }
+            </MudStack>
+        </MudPaper>
+    </MudItem>
+
+    <!-- Alerts + Activity -->
+    <MudItem xs="12" md="7">
+        <MudStack Spacing="4">
+            <!-- Fast Moving -->
+            <MudPaper Elevation="0" Style="border: 1px solid var(--mud-palette-divider); border-radius: 10px;" Class="pa-6">
+                <MudText Typo="Typo.h6" Class="mb-6" Style="font-family: var(--mud-typography-h6-font-family); font-weight: 700;">
+                    <MudIcon Icon="@Icons.Material.Filled.Bolt" Color="Color.Warning" Class="mr-2" />
+                    Operational Velocity
+                </MudText>
+                @foreach (var item in FastMoving)
+                {
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--mud-palette-divider);">
+                        <div>
+                            <MudText Typo="Typo.body2" Style="font-weight: 700;">@item.Name</MudText>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">@item.Alert</MudText>
+                        </div>
+                        <MudChip T="string" Size="Size.Small" Color="@(item.Status == "Critical" ? Color.Error : item.Status == "Active" ? Color.Success : Color.Default)" Variant="Variant.Text" Style="font-weight: 800; text-transform: uppercase;">@item.Status</MudChip>
+                    </div>
+                }
+            </MudPaper>
+
+            <!-- Defaulter Watchlist -->
+            <MudPaper Elevation="0" Style="border: 1px solid var(--mud-palette-divider); border-radius: 10px;" Class="pa-6">
+                <MudText Typo="Typo.h6" Class="mb-6" Style="font-family: var(--mud-typography-h6-font-family); font-weight: 700;">
+                    <MudIcon Icon="@Icons.Material.Filled.Warning" Color="Color.Error" Class="mr-2" />
+                    Liquidity Watchlist
+                </MudText>
+                @foreach (var d in Defaulters)
+                {
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--mud-palette-divider);">
+                        <div>
+                            <MudText Typo="Typo.body2" Style="font-weight: 700;">@d.Name</MudText>
+                            <MudText Typo="Typo.caption" Color="Color.Error" Style="font-weight: 700;">@d.Days Days Overdue</MudText>
+                        </div>
+                        <MudText Typo="Typo.body2" Color="Color.Error" Style="font-weight: 800; font-family: monospace;">@d.Amount</MudText>
+                    </div>
+                }
+            </MudPaper>
+        </MudStack>
+    </MudItem>
+
+    <!-- Recent Transactions -->
+    <MudItem xs="12">
+        <MudPaper Elevation="0" Style="border: 1px solid var(--mud-palette-divider); border-radius: 10px;" Class="pa-6">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-6" Justify="Justify.SpaceBetween">
+                <MudText Typo="Typo.h6" Style="font-family: var(--mud-typography-h6-font-family); font-weight: 700;">Recent Strategic Trades</MudText>
+                <MudButton Variant="Variant.Text" Color="Color.Primary" Size="Size.Small" Style="font-weight: 800;">EXPAND AUDIT</MudButton>
+            </MudStack>
+            <MudTable Items="@Trades" Hover="true" Elevation="0" Style="background: transparent;" Dense="true" Breakpoint="Breakpoint.Sm">
+                <HeaderContent>
+                    <MudTh Style="font-size: 0.65rem; font-weight: 800; letter-spacing: 0.05em; color: var(--mud-palette-text-secondary);">TRADE ID</MudTh>
+                    <MudTh Style="font-size: 0.65rem; font-weight: 800; letter-spacing: 0.05em; color: var(--mud-palette-text-secondary);">CUSTOMER</MudTh>
+                    <MudTh Style="font-size: 0.65rem; font-weight: 800; letter-spacing: 0.05em; color: var(--mud-palette-text-secondary);">MATERIAL</MudTh>
+                    <MudTh Style="font-size: 0.65rem; font-weight: 800; letter-spacing: 0.05em; color: var(--mud-palette-text-secondary);">QTY (MT)</MudTh>
+                    <MudTh Style="font-size: 0.65rem; font-weight: 800; letter-spacing: 0.05em; color: var(--mud-palette-text-secondary);">GROSS VALUE</MudTh>
+                    <MudTh Style="font-size: 0.65rem; font-weight: 800; letter-spacing: 0.05em; color: var(--mud-palette-text-secondary);">FULFILLMENT</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd Style="font-family: monospace; font-weight: 700;">@context.Id</MudTd>
+                    <MudTd Style="font-weight: 700;">@context.Customer</MudTd>
+                    <MudTd>@context.Material</MudTd>
+                    <MudTd Style="font-weight: 600;">@context.Qty</MudTd>
+                    <MudTd Style="font-family: monospace; font-weight: 800; color: var(--mud-palette-primary);">@context.Value</MudTd>
+                    <MudTd>
+                        <MudChip T="string" Size="Size.Small" Color="@(context.Status == "Delivered" ? Color.Success : context.Status == "Overdue" ? Color.Error : Color.Info)" Variant="Variant.Text" Style="font-weight: 800;">@context.Status</MudChip>
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code {
+    record TopCustomer(string Name, string Tier, string Volume);
+    record StockAlert(string Name, string Alert, string AlertColor, string Status, string ChipStyle);
+    record DefaulterEntry(string Name, int Days, string Amount);
+    record Trade(string Id, string Customer, string Material, int Qty, string Value, string Status, string StatusStyle);
+
+    List<TopCustomer> TopCustomers = new()
+    {
+        new("S.M. Infrastructure Pvt Ltd", "Tier 1 Client", "840 MT"),
+        new("Akash Buildcon", "Project-based Account", "620 MT"),
+        new("Raj Laxmi Steels", "Retail Distributor", "510 MT"),
+        new("Bharat TMT Traders", "Wholesale Partner", "480 MT"),
+        new("National Steel Corp", "Industrial Supplier", "390 MT"),
+    };
+
+    List<StockAlert> FastMoving = new()
+    {
+        new("12mm TMT Bars (Fe500D)", "Out of Stock Risk: 2 Days", "#ffb4ab", "Critical", "background: #3a1a1a; color: #ffb4ab;"),
+        new("8mm HR Sheets (SS304)", "Primary Construction Driver", "#6ee591", "Active", "background: #285233; color: #6ee591;"),
+        new("Galvanized Wire (20 Gauge)", "Holding Cost Impact: Low", "#6b726a", "Dead Stock", "background: #2a2e2a; color: #bdcabc;"),
+    };
+
+    List<DefaulterEntry> Defaulters = new()
+    {
+        new("Aggarwal Metals Ltd.", 42, "Rs.14,20,500"),
+        new("Jai Krishna Foundries", 38, "Rs.8,75,000"),
+    };
+
+    List<Trade> Trades = new()
+    {
+        new("TRD-0291", "S.M. Infrastructure", "12mm TMT Bars", 120, "Rs.7,44,000", "Delivered", "background: #285233; color: #6ee591;"),
+        new("TRD-0290", "Akash Buildcon", "HRC Sheets", 80, "Rs.6,76,000", "In Transit", "background: #2a3040; color: #90caf9;"),
+        new("TRD-0289", "Raj Laxmi Steels", "Scrap Iron HMS-1", 200, "Rs.7,80,000", "Invoiced", "background: #2e2a1a; color: #ffe082;"),
+        new("TRD-0288", "Mehta Construction", "Wire Rod SAE-1008", 50, "Rs.3,55,000", "Overdue", "background: #3a1a1a; color: #ffb4ab;"),
+    };
+}

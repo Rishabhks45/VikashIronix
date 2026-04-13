@@ -1,0 +1,560 @@
+@page "/financials/daily"
+@rendermode InteractiveServer
+@using SharedKernel.DTOs.Billing
+@using VikashIronix_WebUI.Services.Bills
+@inject IBillService BillService
+@inject ISnackbar Snackbar
+@inject IJSRuntime JS
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>Daily Revenue Audit - The Iron Ledger</PageTitle>
+
+<div style="padding: 16px 20px 40px; max-width: 1440px; margin: 0 auto; color: var(--mud-palette-text-primary); font-family: var(--mud-typography-default-font-family);">
+    
+    <!-- Title & Date Selector -->
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <div>
+            <MudText Typo="Typo.h5" Style="font-family: var(--mud-typography-h2-font-family); font-weight: 950; letter-spacing: -0.04em;">Daily Revenue Audit</MudText>
+            <MudText Typo="Typo.caption" Color="Color.Secondary">Fiscal tracking for @(SelectedDate?.ToString("dd MMMM yyyy") ?? "all time")</MudText>
+        </div>
+        <div style="width: 220px;">
+            <MudDatePicker Label="Select Audit Date" @bind-Date="SelectedDate" Variant="Variant.Outlined" Margin="Margin.Dense" Rounded="true" Color="Color.Primary" />
+        </div>
+    </MudStack>
+
+    <MudGrid Spacing="2" Class="mb-4">
+        <MudItem xs="12" sm="3">
+            <MudPaper Elevation="0" Style="border: 1px solid var(--mud-palette-divider); border-radius: 12px; border-left: 4px solid var(--mud-palette-info);" Class="pa-4">
+                <MudText Style="font-size: 0.6rem; font-weight: 800; color: var(--mud-palette-text-secondary); letter-spacing: 0.1em; text-transform: uppercase;">TOTAL BILLING</MudText>
+                <MudText Typo="Typo.h5" Color="Color.Default" Style="font-weight: 900;" Class="mt-1">₹ @FilteredBills.Sum(b => b.GrandTotal).ToString("N0")</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary" Style="font-weight: 700;">@FilteredBills.Count transactions</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="3">
+            <MudPaper Elevation="0" Style="border: 1px solid var(--mud-palette-divider); border-radius: 12px; border-left: 4px solid #f59e0b;" Class="pa-4">
+                <MudText Style="font-size: 0.6rem; font-weight: 800; color: var(--mud-palette-text-secondary); letter-spacing: 0.1em; text-transform: uppercase;">COLLECTED (CASH)</MudText>
+                <MudText Typo="Typo.h5" Style="font-weight: 900; color: #f59e0b;" Class="mt-1">₹ @FilteredBills.Sum(b => b.CashPaid).ToString("N0")</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary" Style="font-weight: 700;">Liquid assets</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="3">
+            <MudPaper Elevation="0" Style="border: 1px solid var(--mud-palette-divider); border-radius: 12px; border-left: 4px solid var(--mud-palette-success);" Class="pa-4">
+                <MudText Style="font-size: 0.6rem; font-weight: 800; color: var(--mud-palette-text-secondary); letter-spacing: 0.1em; text-transform: uppercase;">COLLECTED (A/C)</MudText>
+                <MudText Typo="Typo.h5" Color="Color.Success" Style="font-weight: 900;" Class="mt-1">₹ @FilteredBills.Sum(b => b.AmountPaid).ToString("N0")</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Success" Style="font-weight: 700;">@GetCollectionEfficiency() eff.</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="3">
+            <MudPaper Elevation="0" Style="border: 1px solid var(--mud-palette-divider); border-radius: 12px; border-left: 4px solid var(--mud-palette-error);" Class="pa-4">
+                <MudText Style="font-size: 0.6rem; font-weight: 800; color: var(--mud-palette-text-secondary); letter-spacing: 0.1em; text-transform: uppercase;">OUTSTANDING</MudText>
+                <MudText Typo="Typo.h5" Color="Color.Error" Style="font-weight: 900;" Class="mt-1">₹ @FilteredBills.Sum(b => b.GrandTotal - (b.CashPaid + b.AmountPaid)).ToString("N0")</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Error" Style="font-weight: 700;">Receivables</MudText>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
+    <MudPaper Elevation="0" Style="border: 1px solid var(--mud-palette-divider); border-radius: 16px; padding: 0; overflow: hidden;">
+        <div style="padding: 12px 20px; border-bottom: 1px solid var(--mud-palette-divider); display: flex; justify-content: space-between; align-items: center; background: var(--mud-palette-surface-grey);">
+            <div>
+                <MudText Typo="Typo.subtitle2" Style="font-weight: 900; letter-spacing: 0.5px;">Trade Ledger Snapshot</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">Fiscal records synchronization.</MudText>
+            </div>
+            <MudStack Row="true" Spacing="2">
+                <MudButton StartIcon="@Icons.Material.Filled.Download" 
+                           OnClick="DownloadLedger" 
+                           Variant="Variant.Filled" 
+                           Color="Color.Primary" 
+                           Size="Size.Small"
+                           Style="text-transform: none; font-weight: 800; border-radius: 8px;">Download Ledger</MudButton>
+                <MudButton StartIcon="@Icons.Material.Filled.Print" OnClick="PrintLedger" Variant="Variant.Outlined" Color="Color.Secondary" Size="Size.Small" Style="text-transform: none; font-weight: 700; border-radius: 8px;">Print</MudButton>
+            </MudStack>
+        </div>
+        
+        <MudTable Items="@FilteredBills" Hover="true" Elevation="0" Style="background: transparent;" Dense="true" Breakpoint="Breakpoint.None">
+            <ColGroup>
+                <col style="width: 25%;" />
+                <col style="width: 8%;" />
+                <col style="width: 14%;" />
+                <col style="width: 14%;" />
+                <col style="width: 14%;" />
+                <col style="width: 14%;" />
+                <col style="width: 11%;" />
+            </ColGroup>
+            <HeaderContent>
+                <MudTh Style="font-size: 0.65rem; font-weight: 800; letter-spacing: 0.05em; color: var(--mud-palette-text-secondary); text-transform: uppercase; padding: 12px;">Customer / Shop Name</MudTh>
+                <MudTh Style="font-size: 0.65rem; font-weight: 800; letter-spacing: 0.05em; color: var(--mud-palette-text-secondary); text-transform: uppercase; text-align: center; padding: 12px;">Weight (KG)</MudTh>
+                <MudTh Style="font-size: 0.65rem; font-weight: 800; letter-spacing: 0.05em; color: var(--mud-palette-text-secondary); text-transform: uppercase; text-align: center; padding: 12px;">Total Bill (₹)</MudTh>
+                <MudTh Style="font-size: 0.65rem; font-weight: 800; letter-spacing: 0.05em; color: #f59e0b; text-transform: uppercase; text-align: center; padding: 12px;">Collected (Cash)</MudTh>
+                <MudTh Style="font-size: 0.65rem; font-weight: 800; letter-spacing: 0.05em; color: var(--mud-palette-success); text-transform: uppercase; text-align: center; padding: 12px;">Collected (A/C)</MudTh>
+                <MudTh Style="font-size: 0.65rem; font-weight: 800; letter-spacing: 0.05em; color: var(--mud-palette-error); text-transform: uppercase; text-align: center; padding: 12px;">Outstanding (Due)</MudTh>
+                <MudTh Style="font-size: 0.65rem; font-weight: 800; letter-spacing: 0.05em; color: var(--mud-palette-text-secondary); text-transform: uppercase; text-align: right; padding: 12px;">Actions</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd Style="padding: 8px 12px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <MudAvatar Color="@GetRandomColor(context.ShopName)" Size="Size.Small" Style="font-weight: 800; font-size: 0.6rem;">@context.ShopName.Substring(0, 1).ToUpper()</MudAvatar>
+                        <div style="overflow: hidden;">
+                            <MudText Typo="Typo.body2" Style="font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">@context.ShopName</MudText>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary" Style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">@context.CustomerName</MudText>
+                        </div>
+                    </div>
+                </MudTd>
+                <MudTd Style="text-align: center; font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 0.85rem; padding: 12px;">@context.TotalWeightKg.ToString("N0")</MudTd>
+                <MudTd Style="text-align: center; font-family: 'JetBrains Mono', monospace; font-weight: 800; color: var(--mud-palette-primary); font-size: 0.85rem; padding: 12px;">₹@context.GrandTotal.ToString("N0")</MudTd>
+                <MudTd Style="text-align: center; font-family: 'JetBrains Mono', monospace; font-weight: 800; color: #f59e0b; font-size: 0.85rem; padding: 12px;">₹@context.CashPaid.ToString("N0")</MudTd>
+                <MudTd Style="text-align: center; font-family: 'JetBrains Mono', monospace; font-weight: 800; color: var(--mud-palette-success); font-size: 0.85rem; padding: 12px;">₹@context.AmountPaid.ToString("N0")</MudTd>
+                <MudTd Style="text-align: center; font-family: 'JetBrains Mono', monospace; font-weight: 800; color: var(--mud-palette-error); font-size: 0.85rem; padding: 12px;">₹@context.BalanceDue.ToString("N0")</MudTd>
+                <MudTd Style="text-align: right; padding: 12px;">
+                    <div style="display: flex; justify-content: flex-end; gap: 4px;">
+                        @if (CanModify(context))
+                        {
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Info" OnClick="() => OpenEditPayment(context)" />
+                        }
+                        else
+                        {
+                            <MudIconButton Icon="@Icons.Material.Filled.Lock" Size="Size.Small" Color="Color.Default" Disabled="true" />
+                        }
+                        <MudIconButton Icon="@Icons.Material.Filled.Visibility" Size="Size.Small" Color="Color.Primary" OnClick="() => ViewBillDetails(context.Id)" />
+                        <MudIconButton Icon="@Icons.Material.Filled.Download" Size="Size.Small" Color="Color.Success" OnClick="() => DownloadIndividualBill(context.Id)" />
+                        @if (CanModify(context))
+                        {
+                            @* <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="() => DeleteBill(context.Id)" /> *@
+                        }
+                    </div>
+                </MudTd>
+            </RowTemplate>
+            <FooterContent>
+                <MudTableFooter>
+                    <MudTd Style="font-weight: 950; text-transform: uppercase; padding: 12px; font-size: 0.75rem; letter-spacing: 0.05em; color: var(--mud-palette-text-secondary);">FISCAL TOTALS</MudTd>
+                    <MudTd Style="text-align: center; font-weight: 950; font-size: 0.85rem; font-family: 'JetBrains Mono', monospace; padding: 12px;">@FilteredBills.Sum(b => b.TotalWeightKg).ToString("N0")</MudTd>
+                    <MudTd Style="text-align: center; font-weight: 950; font-size: 0.95rem; font-family: 'JetBrains Mono', monospace; color: var(--mud-palette-primary); padding: 12px;">₹@FilteredBills.Sum(b => b.GrandTotal).ToString("N0")</MudTd>
+                    <MudTd Style="text-align: center; font-weight: 950; font-size: 0.95rem; font-family: 'JetBrains Mono', monospace; color: #f59e0b; padding: 12px;">₹@FilteredBills.Sum(b => b.CashPaid).ToString("N0")</MudTd>
+                    <MudTd Style="text-align: center; font-weight: 950; font-size: 0.95rem; font-family: 'JetBrains Mono', monospace; color: var(--mud-palette-success); padding: 12px;">₹@FilteredBills.Sum(b => b.AmountPaid).ToString("N0")</MudTd>
+                    <MudTd Style="text-align: center; font-weight: 950; font-size: 0.95rem; font-family: 'JetBrains Mono', monospace; color: var(--mud-palette-error); padding: 12px;">₹@FilteredBills.Sum(b => b.BalanceDue).ToString("N0")</MudTd>
+                    <MudTd />
+                </MudTableFooter>
+            </FooterContent>
+        </MudTable>
+    </MudPaper>
+
+    <!-- High-Performance Audit Overlay (Glassmorphism Styled) -->
+    <MudOverlay @bind-Visible="ViewDialogVisible" DarkBackground="true" AutoClose="false" ZIndex="9999" LockScroll="true">
+        <MudPaper Elevation="25" Style="width: 90vw; max-width: 800px; max-height: 90vh; overflow-y: auto; border-radius: 24px; border: 1px solid rgba(255,255,255,0.1); background: rgba(30,32,32,0.95); backdrop-filter: blur(12px);" Class="pa-8">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 32px;">
+                <div>
+                    <MudText Typo="Typo.h5" Style="font-weight: 900; letter-spacing: 1px; color: #fff;">FISCAL AUDIT</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">BILL ID: @ViewingBill?.BillNumber</MudText>
+                </div>
+                <MudIconButton Icon="@Icons.Material.Filled.Close" Color="Color.Inherit" OnClick="() => { ViewDialogVisible = false; StateHasChanged(); }" />
+            </div>
+
+            @if (ViewingBill == null)
+            {
+                <div class="d-flex flex-column align-center pa-10">
+                    <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
+                    <MudText Typo="Typo.caption" Class="mt-4">Retrieving Transaction Metadata...</MudText>
+                </div>
+            }
+            else
+            {
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-bottom: 32px;">
+                    <div>
+                        <MudText Typo="Typo.overline" Color="Color.Secondary">Customer Node</MudText>
+                        <MudText Typo="Typo.h6" Style="font-weight: 800;">@ViewingBill.ShopName</MudText>
+                        <MudText Typo="Typo.body2">Prop: @ViewingBill.CustomerName</MudText>
+                    </div>
+                    <div style="text-align: right;">
+                        <MudText Typo="Typo.overline" Color="Color.Secondary">Temporal Timestamp</MudText>
+                        <MudText Typo="Typo.h6" Style="font-weight: 800;">@ViewingBill.BillDate.ToString("dd MMM yyyy")</MudText>
+                        <MudText Typo="Typo.caption">@ViewingBill.BillDate.ToString("hh:mm tt")</MudText>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 32px; border-radius: 12px; overflow: hidden; border: 1px solid var(--mud-palette-divider);">
+                    <table style="width:100%; border-collapse: collapse;">
+                        <thead style="background: rgba(255,255,255,0.05);">
+                            <tr>
+                                <th style="text-align:left; padding: 12px 16px; font-size: 0.7rem; text-transform:uppercase;">Material</th>
+                                <th style="text-align:center; padding: 12px 16px; font-size: 0.7rem; text-transform:uppercase;">Qty</th>
+                                <th style="text-align:right; padding: 12px 16px; font-size: 0.7rem; text-transform:uppercase;">Total Price</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in ViewingBill.Items)
+                            {
+                                <tr style="border-bottom: 1px solid var(--mud-palette-divider);">
+                                    <td style="padding: 12px 16px; font-weight: 700;">@item.MaterialName (@item.Shape)</td>
+                                    <td style="padding: 12px 16px; text-align:center; font-family:monospace;">@item.Quantity.ToString("N2")</td>
+                                    <td style="padding: 12px 16px; text-align:right; font-family:monospace; font-weight: 700;">₹ @item.TotalPrice.ToString("N2")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <div style="background: rgba(255,255,255,0.03); padding: 24px; border-radius: 16px; display: grid; grid-template-columns: 1fr 1.5fr; gap: 40px; border: 1px solid rgba(255,255,255,0.05);">
+                     <div>
+                         <MudText Typo="Typo.overline" Color="Color.Secondary">Notes & Logistics</MudText>
+                         <MudText Typo="Typo.body2" Style="color: rgba(255,255,255,0.7);">@ViewingBill.Notes</MudText>
+                     </div>
+                     <MudStack Spacing="1">
+                         <div style="display:flex; justify-content:space-between;">
+                             <MudText Typo="Typo.caption">Subtotal Ledger</MudText>
+                             <MudText Typo="Typo.caption" Style="font-weight: 700;">₹ @ViewingBill.SubTotal.ToString("N2")</MudText>
+                         </div>
+                         <div style="display:flex; justify-content:space-between;">
+                             <MudText Typo="Typo.caption">Tax Coordinates (18%)</MudText>
+                             <MudText Typo="Typo.caption" Style="font-weight: 700;">₹ @((ViewingBill.CGSTAmount + ViewingBill.SGSTAmount).ToString("N2"))</MudText>
+                         </div>
+                         <div style="display:flex; justify-content:space-between; margin-top: 8px; padding-top: 8px; border-top: 2px solid var(--mud-palette-primary);">
+                             <MudText Typo="Typo.h6" Style="font-weight: 900;">GRAND TOTAL</MudText>
+                             <MudText Typo="Typo.h6" Style="font-weight: 900; color: var(--mud-palette-primary);">₹ @ViewingBill.GrandTotal.ToString("N0")</MudText>
+                         </div>
+                     </MudStack>
+                </div>
+            }
+            
+            <div style="margin-top: 32px; display: flex; justify-content: flex-end;">
+                <MudButton OnClick="() => { ViewDialogVisible = false; StateHasChanged(); }" Variant="Variant.Filled" Color="Color.Primary" DisableElevation="true" Style="font-weight: 900; border-radius: 12px; padding: 10px 32px;">CLOSE ARCHIVE</MudButton>
+            </div>
+        </MudPaper>
+    </MudOverlay>
+
+    <!-- Payment Adjustment Overlay -->
+    <MudOverlay @bind-Visible="EditDialogVisible" DarkBackground="true" AutoClose="false" ZIndex="9999">
+        <MudPaper Elevation="25" Style="width: 400px; border-radius: 24px; border: 1px solid var(--mud-palette-divider);" Class="pa-8">
+            <MudText Typo="Typo.h6" Style="font-weight: 900; text-transform: uppercase;">Realize Payment</MudText>
+            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-6">ADJUSTING BILL: @EditingBill?.BillNumber</MudText>
+            
+            <MudStack Spacing="4" Class="mt-6">
+                <MudNumericField T="decimal" Label="CASH PAYMENT (नकद)" Value="EditCash" ValueChanged="OnEditCashChanged" Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Payments" Style="color: #f59e0b; font-weight: 800;" HideSpinButtons="true" />
+                <MudNumericField T="decimal" Label="A/C PAYMENT (बैंक)" Value="EditAccount" ValueChanged="OnEditAccountChanged" Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.AccountBalance" Style="color: var(--mud-palette-success); font-weight: 800;" HideSpinButtons="true" />
+                
+                <div style="background:var(--mud-palette-background-grey); padding:16px; border-radius:12px; border: 1px dashed var(--mud-palette-divider);">
+                    <div style="display:flex; justify-content:space-between; margin-bottom: 4px;">
+                        <MudText Typo="Typo.caption">TOTAL BILL</MudText>
+                        <MudText Typo="Typo.caption" Style="font-family:monospace; font-weight: 700;">₹ @EditingBill?.GrandTotal.ToString("N0")</MudText>
+                    </div>
+                    <div style="display:flex; justify-content:space-between;">
+                        <MudText Typo="Typo.caption" Color="Color.Error">REMAINING DUE</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Error" Style="font-family:monospace; font-weight: 900;">₹ @((EditingBill?.GrandTotal ?? 0) - (EditCash + EditAccount))</MudText>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 12px; margin-top: 12px;">
+                    <MudButton OnClick="() => { EditDialogVisible = false; StateHasChanged(); }" Variant="Variant.Text" FullWidth="true" Style="font-weight: 700;">Cancel</MudButton>
+                    <MudButton OnClick="SaveEditPayment" Color="Color.Primary" Variant="Variant.Filled" DisableElevation="true" FullWidth="true" Style="font-weight: 800;">Commit</MudButton>
+                </div>
+            </MudStack>
+        </MudPaper>
+    </MudOverlay>
+</div>
+
+@code {
+    private List<BillDto> AllBills = new();
+    private DateTime? SelectedDate = DateTime.Today;
+    private bool Loading = true;
+
+    private bool IsSuperAdmin = false;
+    protected override async Task OnInitializedAsync()
+    {
+        try 
+        {
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            var user = authState.User;
+            IsSuperAdmin = user.IsInRole("SuperAdmin") || user.IsInRole("Admin");
+
+            AllBills = await BillService.GetBillsAsync();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error retrieving fiscal records: {ex.Message}", Severity.Error);
+        }
+        Loading = false;
+    }
+
+    private bool CanModify(BillDto b)
+    {
+        if (IsSuperAdmin) return true;
+        // Check if created within last 12 hours
+        return (DateTime.Now - b.CreatedAt).TotalHours <= 12;
+    }
+
+    private List<BillDto> FilteredBills => SelectedDate.HasValue
+        ? AllBills.Where(b => b.BillDate.Date == SelectedDate.Value.Date).ToList()
+        : AllBills;
+
+    private string GetCollectionEfficiency()
+    {
+        var total = FilteredBills.Sum(b => b.GrandTotal);
+        if (total == 0) return "0%";
+        var paid = FilteredBills.Sum(b => b.AmountPaid + b.CashPaid);
+        return $"{(paid / total * 100m).ToString("N1")}%";
+    }
+
+    private string CalcCriticalOverdue()
+    {
+        return FilteredBills.Where(b => b.BalanceDue > 10000).Sum(b => b.BalanceDue).ToString("N0");
+    }
+
+    // ── Payment Editing ──────────────────────────────────────
+    private BillDto? EditingBill;
+    private bool EditDialogVisible = false;
+    private decimal EditCash;
+    private decimal EditAccount;
+
+    private void OpenEditPayment(BillDto bill)
+    {
+        EditingBill = bill;
+        EditCash = bill.CashPaid;
+        EditAccount = bill.AmountPaid;
+        EditDialogVisible = true;
+        StateHasChanged();
+    }
+
+    private void OnEditCashChanged(decimal val)
+    {
+        if (EditingBill == null) return;
+        EditCash = val;
+        EditAccount = EditingBill.GrandTotal - EditCash;
+    }
+
+    private void OnEditAccountChanged(decimal val)
+    {
+        if (EditingBill == null) return;
+        EditAccount = val;
+        EditCash = EditingBill.GrandTotal - EditAccount;
+    }
+
+    private async Task SaveEditPayment()
+    {
+        if (EditingBill == null) return;
+        try
+        {
+            EditingBill.CashPaid = EditCash;
+            EditingBill.AmountPaid = EditAccount;
+            EditingBill.BalanceDue = EditingBill.GrandTotal - (EditCash + EditAccount);
+            
+            await BillService.UpdateBillAsync(EditingBill);
+            Snackbar.Add("Ledger updated. Payment distribution synchronized.", Severity.Success);
+            EditDialogVisible = false;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Update failed: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task DeleteBill(Guid id)
+    {
+        try 
+        {
+            var success = await BillService.DeleteBillAsync(id);
+            if (success)
+            {
+                AllBills.RemoveAll(b => b.Id == id);
+                Snackbar.Add("Transaction purged from database.", Severity.Success);
+            }
+        }
+        catch (Exception ex) { Snackbar.Add($"Purge error: {ex.Message}", Severity.Error); }
+    }
+    // ── Detailed Preview ─────────────────────────────────────
+    private BillDto? ViewingBill;
+    private bool ViewDialogVisible = false;
+
+    private async Task ViewBillDetails(Guid id)
+    {
+        ViewingBill = null;
+        ViewDialogVisible = true;
+        StateHasChanged();
+
+        try
+        {
+            ViewingBill = await BillService.GetBillByIdAsync(id);
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Audit retrieval failed: {ex.Message}", Severity.Error);
+            ViewDialogVisible = false;
+        }
+    }
+
+    private Color GetRandomColor(string input)
+    {
+        int hash = input.GetHashCode();
+        var values = Enum.GetValues(typeof(Color));
+        return (Color)values.GetValue(Math.Abs(hash) % 5 + 1)!;
+    }
+
+    private async Task DownloadLedger()
+    {
+        try {
+            Snackbar.Add("Synthesizing fiscal ledger for export...", Severity.Info);
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine("BillNumber,ShopName,CustomerName,Date,TotalWeight,GrandTotal,CashPaid,AmountPaid,BalanceDue");
+            
+            foreach (var b in FilteredBills)
+            {
+                sb.AppendLine($"{b.BillNumber},{b.ShopName},{b.CustomerName},{b.BillDate:yyyy-MM-dd},{b.TotalWeightKg},{b.GrandTotal},{b.CashPaid},{b.AmountPaid},{b.BalanceDue}");
+            }
+            
+            var filename = $"IronLedger_Audit_{SelectedDate?.ToString("yyyyMMdd") ?? "All"}.csv";
+            await JS.InvokeVoidAsync("downloadFile", filename, sb.ToString());
+            Snackbar.Add("Export payload generated and dispatched.", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Export failed: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task PrintLedger()
+    {
+        var html = BuildLedgerHtml();
+        await JS.InvokeVoidAsync("vikashPrint", html);
+    }
+
+    private string BuildLedgerHtml()
+    {
+        var sb = new System.Text.StringBuilder();
+        sb.Append("<!DOCTYPE html><html><head><style>");
+        sb.Append("body{font-family:'Inter','Segoe UI',sans-serif;padding:40px;}");
+        sb.Append(".header{display:flex;justify-content:space-between;border-bottom:3px solid #000;padding-bottom:15px;margin-bottom:30px;}");
+        sb.Append("table{width:100%;border-collapse:collapse;}");
+        sb.Append("th{background:#f1f5f9;text-align:left;padding:12px 8px;font-size:10px;text-transform:uppercase;border-bottom:1px solid #000;}");
+        sb.Append("td{padding:10px 8px;border-bottom:1px solid #e2e8f0;font-size:12px;}");
+        sb.Append(".totals-row{font-weight:900;background:#f8fafc;}");
+        sb.Append("</style></head><body>");
+        sb.Append("<div class='header'><div><h1>Daily Revenue Report</h1><p>FISCAL NODE: " + SelectedDate?.ToString("dd MMM yyyy") + "</p></div><div style='text-align:right'><h3>Vikash Iron & Steel</h3></div></div>");
+        sb.Append("<table><thead><tr><th>Entity Name</th><th>Case (Weight)</th><th>Total (₹)</th><th>Cash (₹)</th><th>A/C (₹)</th><th>Due (₹)</th></tr></thead><tbody>");
+        
+        foreach (var b in FilteredBills)
+        {
+            sb.Append($"<tr><td>{b.ShopName}</td><td>{b.TotalWeightKg:N0}</td><td>{b.GrandTotal:N0}</td><td>{b.CashPaid:N0}</td><td>{b.AmountPaid:N0}</td><td>{b.BalanceDue:N0}</td></tr>");
+        }
+        
+        sb.Append("<tr class='totals-row'><td>GRAND TOTAL (कुल)</td>");
+        sb.Append($"<td>{FilteredBills.Sum(b => b.TotalWeightKg):N0}</td>");
+        sb.Append($"<td>{FilteredBills.Sum(b => b.GrandTotal):N0}</td>");
+        sb.Append($"<td>{FilteredBills.Sum(b => b.CashPaid):N0}</td>");
+        sb.Append($"<td>{FilteredBills.Sum(b => b.AmountPaid):N0}</td>");
+        sb.Append($"<td>{FilteredBills.Sum(b => b.BalanceDue):N0}</td></tr>");
+        
+        sb.Append("</tbody></table></body></html>");
+        return sb.ToString();
+    }
+
+
+    private async Task DownloadIndividualBill(Guid id)
+    {
+        try
+        {
+            var bill = await BillService.GetBillByIdAsync(id);
+            if (bill == null)
+            {
+                Snackbar.Add("Failed to retrieve bill details.", Severity.Error);
+                return;
+            }
+            
+            var html = BuildIndividualInvoiceHtml(bill);
+            await JS.InvokeVoidAsync("vikashPrint", html);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error generating document: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private string BuildIndividualInvoiceHtml(BillDto b)
+    {
+        var sb = new System.Text.StringBuilder();
+        bool hasGst = b.CGSTAmount > 0 || b.SGSTAmount > 0;
+
+        sb.Append("<!DOCTYPE html><html><head><meta charset='utf-8'><style>");
+        sb.Append("body{font-family:'Segoe UI',sans-serif;color:#0f172a;padding:40px;max-width:800px;margin:0 auto;}");
+        sb.Append("h1{font-size:24px;font-weight:800;margin:0;}");
+        sb.Append(".subtitle{font-size:12px;color:#64748b;text-transform:uppercase;letter-spacing:.1em;}");
+        sb.Append("table{width:100%;border-collapse:collapse;margin-top:24px;}");
+        sb.Append("th{background:#f8fafc;padding:10px 4px;text-align:left;font-size:12px;text-transform:uppercase;color:#64748b;border-bottom:2px solid #e2e8f0;}");
+        sb.Append("th:not(:first-child){text-align:right;}");
+        sb.Append("td{padding:8px 4px;border-bottom:1px solid #e2e8f0;font-size:13px;}");
+        sb.Append(".totals{margin-top:24px;border-top:1px solid #e2e8f0;padding-top:16px;display:flex;flex-direction:column;align-items:flex-end;gap:8px;}");
+        sb.Append(".grand{font-size:22px;font-weight:800;color:#16a34a;}");
+        sb.Append(".footer{margin-top:48px;text-align:center;font-size:11px;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:16px;}");
+        sb.Append("</style></head><body>");
+
+        sb.Append("<div style='display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #0f172a;padding-bottom:16px;'>");
+        sb.Append("<div><div class='subtitle'>Tax Invoice</div><h1>VIKASH IRON AND STEEL PVT LTD</h1><div style='font-size:12px;color:#64748b;margin-top:4px;'>Ekma Parsa Road, 841208 | Mob: 9631691290</div></div>");
+        sb.Append("<div style='text-align:right;'>");
+        sb.Append($"<div style='font-size:20px;font-weight:700;'>{b.BillNumber}</div>");
+        sb.Append($"<div style='font-size:13px;color:#64748b;'>Date: {b.BillDate:dd MMM yyyy}</div>");
+        if (b.CashPaid > 0 && b.AmountPaid > 0)
+            sb.Append($"<div style='font-size:12px;color:#16a34a;font-weight:bold;margin-top:4px;'>Payment: Cash(₹{b.CashPaid:N0}) + A/C(₹{b.AmountPaid:N0})</div>");
+        else if (b.CashPaid > 0)
+            sb.Append($"<div style='font-size:12px;color:#16a34a;font-weight:bold;margin-top:4px;'>Payment: CASH</div>");
+        else if (b.AmountPaid > 0)
+            sb.Append($"<div style='font-size:12px;color:#16a34a;font-weight:bold;margin-top:4px;'>Payment: A/C</div>");
+        sb.Append("</div></div>");
+
+        sb.Append("<div style='display:flex;justify-content:space-between;margin:24px 0;'><div><div class='subtitle'>Bill To</div>");
+        sb.Append($"<div style='font-size:15px;font-weight:700;margin-top:6px;'>{b.ShopName}</div>");
+        sb.Append($"<div style='color:#334155;font-size:12px;'>Contact: {b.CustomerName}</div>");
+        sb.Append($"<div style='color:#64748b;'>{b.ShopAddress}</div></div>");
+        sb.Append("</div>");
+
+        sb.Append("<table><thead><tr><th>ITEM</th><th style='text-align:right;'>QTY (KG)</th><th style='text-align:right;'>RATE</th>");
+        if (hasGst) sb.Append("<th style='text-align:right;'>GST%</th>");
+        sb.Append("<th style='text-align:right;'>AMOUNT</th></tr></thead><tbody>");
+
+        foreach (var item in b.Items)
+        {
+            sb.Append("<tr>");
+            sb.Append($"<td>{item.MaterialName} ({item.Shape})</td>");
+            sb.Append($"<td style='text-align:right;'>{item.Quantity:N3}</td>");
+            sb.Append($"<td style='text-align:right;'>&#8377;{item.UnitPrice:N2}</td>");
+            if (hasGst) sb.Append($"<td style='text-align:right;'>{item.TaxPercentage}%</td>");
+            sb.Append($"<td style='text-align:right;font-weight:700;'>&#8377;{item.TotalPrice:N2}</td>");
+            sb.Append("</tr>");
+        }
+        sb.Append("</tbody></table>");
+
+        sb.Append("<div style='display:grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 24px;'>");
+        
+        // Payment Info & QR (Left)
+        sb.Append("<div style='background:#f8fafc; padding:16px; border-radius:8px; border:1px solid #e2e8f0;'>");
+        sb.Append("<div class='subtitle' style='margin-bottom:8px;'>Collection Status</div>");
+        sb.Append($"<div style='font-size:12px;'>Cash Realized: ₹ {b.CashPaid:N2}</div>");
+        sb.Append($"<div style='font-size:12px;'>Bank Realized: ₹ {b.AmountPaid:N2}</div>");
+        var balDue = b.GrandTotal - (b.CashPaid + b.AmountPaid);
+        sb.Append($"<div style='font-size:13px; font-weight:800; color:{(balDue > 0 ? "#ef4444" : "#16a34a")}; border-top:1px solid #e2e8f0; margin-top:8px; padding-top:4px;'>Balance Due: ₹ {balDue:N2}</div>");
+        
+        if (balDue > 0)
+        {
+            sb.Append("<div style='margin-top:16px; text-align:center;'>");
+            sb.Append($"<img src='https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=upi://pay?pa=risham123sharma@ybl%26pn=Vikash%20Iron%26am={balDue}%26cu=INR' style='width:100px; height:100px; border: 1px solid #cbd5e1; border-radius:4px;' />");
+            sb.Append("<div style='font-size:10px; font-weight:800; font-family:monospace; margin-top:4px;'>risham123sharma@ybl</div>");
+            sb.Append("</div>");
+        }
+        sb.Append("</div>");
+
+        // Totals (Right)
+        sb.Append("<div class='totals' style='margin-top:0;'>");
+        sb.Append($"<div>Subtotal: <strong>&#8377;{b.SubTotal:N2}</strong></div>");
+        if (hasGst)
+        {
+            sb.Append($"<div style='font-size:13px;color:#64748b;'>CGST (9%): &#8377;{(b.CGSTAmount):N2}</div>");
+            sb.Append($"<div style='font-size:13px;color:#64748b;'>SGST (9%): &#8377;{(b.SGSTAmount):N2}</div>");
+        }
+        if (b.BhadaAmount > 0) sb.Append($"<div style='font-size:13px;color:#64748b;'>Bhada: &#8377;{b.BhadaAmount:N2}</div>");
+        if (b.LabourAmount > 0) sb.Append($"<div style='font-size:13px;color:#64748b;'>Labour: &#8377;{b.LabourAmount:N2}</div>");
+        if (b.RoundingAdjustment != 0) sb.Append($"<div style='font-size:13px;color:#64748b;'>Rounding: &#8377;{b.RoundingAdjustment:N2}</div>");
+        sb.Append($"<div class='grand'>Grand Total: &#8377;{b.GrandTotal:N2}</div>");
+        sb.Append("</div></div>");
+
+        sb.Append("<div class='footer'>This is a computer generated document. &mdash; Vikash Iron Ltd.</div>");
+        sb.Append("</body></html>");
+        return sb.ToString();
+    }
+}

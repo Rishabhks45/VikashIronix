@@ -1,0 +1,230 @@
+@page "/customers"
+@using SharedKernel.DTOs.Customers
+@using VikashIronix_WebUI.Services.Customers
+@using VikashIronix_WebUI.Services.Users
+@using SharedKernel.DTOs.Users
+@inject ICustomerService CustomerService
+@inject IUserService UserService
+@inject IDialogService DialogService
+@rendermode InteractiveServer
+
+<PageTitle>Customer Management - The Iron Ledger</PageTitle>
+
+<MudDrawer @bind-Open="_drawerOpen" Anchor="Anchor.End" Elevation="4" Variant="@DrawerVariant.Temporary" Width="480px" Style="border-left: 1px solid var(--mud-palette-divider); background: var(--mud-palette-surface);">
+    <div style="padding: 32px;">
+        <header style="margin-bottom: 32px; display: flex; align-items: center; gap: 16px;">
+            <div style="width: 48px; height: 48px; border-radius: 12px; background: var(--mud-palette-primary); display: flex; align-items: center; justify-content: center; color: var(--mud-palette-primary-text);">
+                <MudIcon Icon="@(_isNewCustomer ? Icons.Material.Filled.PersonAdd : Icons.Material.Filled.Edit)" Size="Size.Medium" />
+            </div>
+            <div>
+                <MudText Typo="Typo.h6" Style="font-weight: 950; letter-spacing: -0.02em; line-height: 1.1;">@(_isNewCustomer ? "Onboard Entity" : "Update Profile")</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary" Style="font-weight: 600;">@(_isNewCustomer ? "Register a new commercial partner." : "Modify existing commercial credentials.")</MudText>
+            </div>
+        </header>
+
+        <MudForm @ref="_form" @bind-IsValid="@_success">
+            <MudStack Spacing="3">
+                <span style="font-size: 0.6rem; font-weight: 900; color: var(--mud-palette-text-secondary); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: -8px; margin-left: 4px;">Primary Liaison</span>
+                <MudGrid Spacing="2">
+                    <MudItem xs="6">
+                        <MudTextField @bind-Value="_editingCustomer.FirstName" Label="First Name" Required="true" Variant="Variant.Filled" Underline="false" Margin="Margin.Dense" Style="background: rgba(var(--mud-palette-primary-rgb), 0.05); border: 1px solid var(--mud-palette-divider); border-radius: 12px;" />
+                    </MudItem>
+                    <MudItem xs="6">
+                        <MudTextField @bind-Value="_editingCustomer.LastName" Label="Last Name" Variant="Variant.Filled" Underline="false" Margin="Margin.Dense" Style="background: rgba(var(--mud-palette-primary-rgb), 0.05); border: 1px solid var(--mud-palette-divider); border-radius: 12px;" />
+                    </MudItem>
+                </MudGrid>
+
+                <span style="font-size: 0.6rem; font-weight: 900; color: var(--mud-palette-text-secondary); text-transform: uppercase; letter-spacing: 0.1em; margin-top: 12px; margin-bottom: -8px; margin-left: 4px;">Entity Informatics</span>
+                <MudTextField @bind-Value="_editingCustomer.ShopName" Label="Shop Name" Required="true" Variant="Variant.Filled" Underline="false" Margin="Margin.Dense" Style="background: rgba(var(--mud-palette-primary-rgb), 0.05); border: 1px solid var(--mud-palette-divider); border-radius: 12px;" />
+                <MudTextField @bind-Value="_editingCustomer.PhoneNumber" Label="Contact Sequence" Required="true" Variant="Variant.Filled" Underline="false" Margin="Margin.Dense" Style="background: rgba(var(--mud-palette-primary-rgb), 0.05); border: 1px solid var(--mud-palette-divider); border-radius: 12px;" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Phone" />
+                <MudTextField @bind-Value="_editingCustomer.Email" Label="Electronic Mail" Required="true" Variant="Variant.Filled" Underline="false" Margin="Margin.Dense" Style="background: rgba(var(--mud-palette-primary-rgb), 0.05); border: 1px solid var(--mud-palette-divider); border-radius: 12px;" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Email" />
+                
+                <MudSelect T="int" @bind-Value="_editingCustomer.RoleId" Label="Administrative Role" Required="true" Variant="Variant.Filled" Underline="false" Margin="Margin.Dense" Style="background: rgba(var(--mud-palette-primary-rgb), 0.05); border: 1px solid var(--mud-palette-divider); border-radius: 12px;">
+                    <MudSelectItem T="int" Value="0">Select Role</MudSelectItem>
+                  
+                    @foreach (var role in RoleList)
+                    {
+                        <MudSelectItem T="int" Value="@role.Id">@role.Name</MudSelectItem>
+                    }
+                </MudSelect>
+
+                <MudTextField @bind-Value="_editingCustomer.ShopAddress" Label="Logistics Origin (Address)" Lines="2" Variant="Variant.Filled" Underline="false" Margin="Margin.Dense" Style="background: rgba(var(--mud-palette-primary-rgb), 0.05); border: 1px solid var(--mud-palette-divider); border-radius: 12px;" />
+                
+                <MudGrid Spacing="2">
+                    <MudItem xs="6">
+                        <MudNumericField @bind-Value="_editingCustomer.Bhada" Label="Freight Rate" Format="N2" Variant="Variant.Filled" Underline="false" Margin="Margin.Dense" Style="background: rgba(var(--mud-palette-primary-rgb), 0.05); border: 1px solid var(--mud-palette-divider); border-radius: 12px;" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.LocalShipping" />
+                    </MudItem>
+                    <MudItem xs="6">
+                        <MudNumericField @bind-Value="_editingCustomer.DisplayIndex" Label="Sequence ID" Variant="Variant.Filled" Underline="false" Margin="Margin.Dense" Style="background: rgba(var(--mud-palette-primary-rgb), 0.05); border: 1px solid var(--mud-palette-divider); border-radius: 12px;" />
+                    </MudItem>
+                </MudGrid>
+                
+                <div style="margin-top: 24px; padding: 12px; background: var(--mud-palette-background-grey); border-radius: 16px; border: 1px solid var(--mud-palette-divider); display: flex; align-items: center; justify-content: space-between;">
+                    <div>
+                        <MudText Typo="Typo.body2" Style="font-weight: 800;">Entity Status</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Allow active transaction auditing?</MudText>
+                    </div>
+                    <MudSwitch T="bool" @bind-Value="_editingCustomer.IsActive" Color="Color.Primary" />
+                </div>
+
+                <div style="display: flex; gap: 12px; margin-top: 32px;">
+                    <MudButton OnClick="CloseDrawer" Variant="Variant.Text" Color="Color.Default" Style="text-transform: none; font-weight: 800; border-radius: 12px; padding: 12px 24px;">Dismiss</MudButton>
+                    <MudSpacer />
+                    <MudButton Color="Color.Primary" OnClick="SaveCustomer" Variant="Variant.Filled" Style="font-weight: 900; border-radius: 12px; text-transform: none; padding: 12px 40px; box-shadow: 0 4px 15px rgba(var(--mud-palette-primary-rgb), 0.3);">
+                        @(_isNewCustomer ? "Finalize Registration" : "Update Profile")
+                    </MudButton>
+                </div>
+            </MudStack>
+        </MudForm>
+    </div>
+</MudDrawer>
+
+<header style="margin-bottom: 40px; display: flex; justify-content: space-between; align-items: flex-end;">
+    <div>
+        <MudText Typo="Typo.h5" Style="font-family: 'Literata', serif; font-weight: 950; letter-spacing: -0.02em;">Entity Management</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary" Style="font-weight: 500;">Manage registered commercial partners, logistic origins, and fiscal profiles.</MudText>
+    </div>
+    <MudButton Variant="Variant.Filled" 
+               Color="Color.Primary" 
+               Style="font-weight: 900; border-radius: 12px; text-transform: none; padding: 10px 24px; box-shadow: 0 4px 15px rgba(var(--mud-palette-primary-rgb), 0.2);" 
+               StartIcon="@Icons.Material.Filled.PersonAddAlt1" 
+               OnClick="OpenAddCustomerDrawer">Register Entity</MudButton>
+</header>
+
+<MudGrid Spacing="4">
+    <MudItem xs="12">
+        <div style="background: var(--mud-palette-surface); border: 1px solid var(--mud-palette-divider); border-radius: 20px; padding: 24px; box-shadow: 0 2px 20px rgba(0,0,0,0.02);">
+            <div style="margin-bottom: 24px; display: flex; align-items: center; gap: 12px;">
+                <div style="width: 40px; height: 40px; background: var(--mud-palette-primary); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #fff;">
+                    <MudIcon Icon="@Icons.Material.Filled.Storefront" Size="Size.Small" />
+                </div>
+                <MudText Typo="Typo.h6" Style="font-weight: 900; letter-spacing: -0.01em;">Registered Commercial Network</MudText>
+            </div>
+            
+            <MudDataGrid Items="@CustomerList" Hover="true" Elevation="0" Style="background: transparent;" Dense="true" Loading="@_loading">
+                <Columns>
+                    <PropertyColumn Property="x => x.ShopName" Title="Shop Name">
+                        <CellTemplate>
+                            <MudText Typo="Typo.body2" Style="font-weight: 700;">@context.Item.ShopName</MudText>
+                        </CellTemplate>
+                    </PropertyColumn>
+                    <PropertyColumn Property="x => x.CustomerName" Title="Customer" />
+                    <PropertyColumn Property="x => x.PhoneNumber" Title="Contact" />
+                    <PropertyColumn Property="x => x.ShopAddress" Title="Address" />
+                    <PropertyColumn Property="x => x.Bhada" Title="Bhada" Format="N2">
+                        <CellTemplate>
+                            <MudText Typo="Typo.body2" Color="Color.Primary" Style="font-weight: 700;">₹ @context.Item.Bhada.ToString("N2")</MudText>
+                        </CellTemplate>
+                    </PropertyColumn>
+                    <TemplateColumn Title="Status">
+                        <CellTemplate>
+                            @if (context.Item.IsActive)
+                            {
+                                <MudChip T="string" Color="Color.Success" Size="Size.Small" Variant="Variant.Text" Style="font-weight: 800;">Active</MudChip>
+                            }
+                            else
+                            {
+                                <MudChip T="string" Color="Color.Default" Size="Size.Small" Variant="Variant.Text" Style="font-weight: 800;">Inactive</MudChip>
+                            }
+                        </CellTemplate>
+                    </TemplateColumn>
+                    <TemplateColumn Title="Actions" HeaderStyle="text-align: right;" CellStyle="text-align: right;">
+                        <CellTemplate>
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Primary" OnClick="@(() => OpenEditCustomerDrawer(context.Item))" />
+                            <MudSwitch T="bool" Value="@context.Item.IsActive" ValueChanged="@((val) => ToggleActiveStatus(context.Item, val))" Color="Color.Success" />
+                        </CellTemplate>
+                    </TemplateColumn>
+                </Columns>
+            </MudDataGrid>
+        </div>
+    </MudItem>
+</MudGrid>
+
+@code {
+    private List<CustomerDto> CustomerList = new();
+    private List<UserDto> UsersList = new();
+    private List<RoleDto> RoleList = new();
+    private bool _loading = true;
+    private bool _drawerOpen = false;
+    private bool _isNewCustomer = true;
+    private CustomerDto _editingCustomer = new();
+    private MudForm _form;
+    private bool _success;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCustomers();
+        await LoadUsers();
+        RoleList = await UserService.GetRolesAsync();
+    }
+
+    private async Task LoadCustomers()
+    {
+        _loading = true;
+        CustomerList = await CustomerService.GetCustomersAsync();
+        _loading = false;
+    }
+
+    private async Task LoadUsers()
+    {
+        UsersList = await UserService.GetUsersAsync();
+    }
+
+    private void OpenAddCustomerDrawer()
+    {
+        _isNewCustomer = true;
+        _editingCustomer = new CustomerDto { IsActive = true, Bhada = 0, RoleId = RoleList.FirstOrDefault()?.Id ?? 0 };
+        _drawerOpen = true;
+    }
+
+    private void OpenEditCustomerDrawer(CustomerDto customer)
+    {
+        _isNewCustomer = false;
+        _editingCustomer = new CustomerDto
+        {
+            Id = customer.Id,
+            UserId = customer.UserId,
+            FirstName = customer.FirstName,
+            LastName = customer.LastName,
+            PhoneNumber = customer.PhoneNumber,
+            Email = customer.Email,
+            RoleId = customer.RoleId,
+            ShopName = customer.ShopName,
+            ShopAddress = customer.ShopAddress,
+            Bhada = customer.Bhada,
+            DisplayIndex = customer.DisplayIndex,
+            IsActive = customer.IsActive
+        };
+        _drawerOpen = true;
+    }
+
+    private void CloseDrawer()
+    {
+        _drawerOpen = false;
+    }
+
+    private async Task SaveCustomer()
+    {
+        await _form.Validate();
+        if (_success)
+        {
+            if (_isNewCustomer) await CustomerService.CreateCustomerAsync(_editingCustomer);
+            else await CustomerService.UpdateCustomerAsync(_editingCustomer);
+            _drawerOpen = false;
+            await LoadCustomers();
+        }
+    }
+
+    private async Task ToggleActiveStatus(CustomerDto customer, bool isActive)
+    {
+        customer.IsActive = isActive;
+        await CustomerService.UpdateCustomerAsync(customer);
+        await LoadCustomers(); // Refresh grid state visually
+    }
+
+    private async Task DeleteCustomer(Guid id)
+    {
+        await CustomerService.DeleteCustomerAsync(id);
+        await LoadCustomers();
+    }
+}

@@ -1,0 +1,233 @@
+@page "/salary-configuration"
+@using SharedKernel.DTOs.Users
+@using VikashIronix_WebUI.Services.Payroll
+@using VikashIronix_WebUI.Services.Users
+@inject IPayrollService PayrollService
+@inject IUserService UserService
+@inject ISnackbar Snackbar
+@rendermode InteractiveServer
+
+<PageTitle>Salary Configuration - The Iron Ledger</PageTitle>
+
+<MudDrawer @bind-Open="_drawerOpen" Anchor="Anchor.End" Elevation="8" Variant="@DrawerVariant.Temporary" Width="420px" Style="border-left: 1px solid var(--mud-palette-divider);">
+    <MudDrawerHeader Class="pa-6 border-b">
+        <div class="d-flex align-center">
+            <MudIcon Icon="@Icons.Material.Filled.Payments" Color="Color.Primary" Class="mr-3" />
+            <MudText Typo="Typo.h6" Style="font-weight: 800;">@(_isNewConfig ? "Set Staff Salary" : "Update Salary")</MudText>
+        </div>
+    </MudDrawerHeader>
+    <div class="pa-6">
+        <MudForm @ref="_form" @bind-IsValid="@_success">
+            <MudStack Spacing="5">
+                @if (_isNewConfig)
+                {
+                    <MudSelect T="string" Label="1. Select Functional Role" @bind-Value="_selectedRole" Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="true">
+                        @foreach (var role in RoleList.Where(r => r.Name != "Customer"))
+                        {
+                            <MudSelectItem T="string" Value="@role.Name">@role.Name</MudSelectItem>
+                        }
+                    </MudSelect>
+
+                    <MudSelect T="Guid?" @bind-Value="_selectedUserId" Label="2. Select Staff Member" 
+                               Required="true" Variant="Variant.Outlined" Margin="Margin.Dense" 
+                               Disabled="@(string.IsNullOrEmpty(_selectedRole))"
+                               Placeholder="@(string.IsNullOrEmpty(_selectedRole) ? "Select a role first" : "Choose employee")">
+                        @if (string.IsNullOrEmpty(_selectedRole))
+                        {
+                            <MudSelectItem T="Guid?" Value="@((Guid?)null)">Please select a role first</MudSelectItem>
+                        }
+                        else if (!Users.Any(u => string.Equals(u.Role, _selectedRole, StringComparison.OrdinalIgnoreCase)))
+                        {
+                            <MudSelectItem T="Guid?" Value="@((Guid?)null)">No staff found for '@_selectedRole'</MudSelectItem>
+                        }
+                        else
+                        {
+                            @foreach (var user in Users.Where(u => string.Equals(u.Role, _selectedRole, StringComparison.OrdinalIgnoreCase) && !SalaryList.Any(s => s.UserId == u.Id)))
+                            {
+                                <MudSelectItem T="Guid?" Value="@user.Id">
+                                    @($"{user.FirstName} {user.LastName}")
+                                </MudSelectItem>
+                            }
+                        }
+                    </MudSelect>
+                }
+                else
+                {
+                    <MudTextField Value="@_editingConfig.StaffName" Label="Staff Member" ReadOnly="true" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                }
+
+                <MudDatePicker @bind-Date="_selectedDate" Label="Effective Date" Required="true" Variant="Variant.Outlined" Margin="Margin.Dense" />
+
+                <MudNumericField @bind-Value="_editingConfig.MonthlySalary" Label="Monthly Net Salary (INR)" 
+                                Variant="Variant.Outlined" Margin="Margin.Dense" 
+                                Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.CurrencyRupee"
+                                HideSpinButtons="true" Required="true" />
+
+                <div class="pa-4 rounded-lg" style="background: var(--mud-palette-background-grey);">
+                    <MudSwitch @bind-Value="_editingConfig.IsActive" Color="Color.Success" Label="Is Active Configuration" />
+                </div>
+
+                <MudStack Row="true" Spacing="2" Class="mt-8">
+                    <MudButton OnClick="CloseDrawer" Variant="Variant.Text" Color="Color.Secondary">Cancel</MudButton>
+                    <MudSpacer />
+                    <MudButton Color="Color.Primary" OnClick="SaveConfig" Variant="Variant.Filled" 
+                               Style="font-weight: 900; border-radius: 8px; text-transform: none; padding: 12px 32px;"
+                               Disabled="@(!_selectedUserId.HasValue && _isNewConfig)">
+                        Save Salary
+                    </MudButton>
+                </MudStack>
+            </MudStack>
+        </MudForm>
+    </div>
+</MudDrawer>
+
+<div class="mb-8">
+    <MudText Typo="Typo.h4" Style="font-weight: 900; letter-spacing: -0.04em; color: var(--mud-palette-primary)">Salary Management</MudText>
+    <MudText Typo="Typo.body1" Color="Color.Secondary">Configure and manage fixed monthly compensation for all staff members.</MudText>
+</div>
+
+<MudPaper Elevation="0" Style="border: 1px solid var(--mud-palette-divider); border-radius: 20px;" Class="pa-0">
+    <div class="pa-6 border-b d-flex align-center">
+        <MudText Typo="Typo.h6" Style="font-weight: 800;">Staff Payroll List</MudText>
+        <MudSpacer />
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="OpenAddConfigDrawer" 
+                   Style="font-weight: 900; border-radius: 12px; text-transform: none;" 
+                   StartIcon="@Icons.Material.Filled.Add">Setup Salary</MudButton>
+    </div>
+
+    @if (_loading)
+    {
+        <div class="pa-12 d-flex flex-column align-center justify-center">
+            <MudProgressCircular Color="Color.Primary" Indeterminate="true" Class="mb-4" />
+            <MudText Typo="Typo.body2" Color="Color.Secondary">Synchronizing staff salary data...</MudText>
+        </div>
+    }
+    else
+    {
+        <MudDataGrid Items="@SalaryList" Hover="true" Elevation="0" Striped="true">
+            <Columns>
+                <PropertyColumn Property="x => x.StaffName" Title="Staff Member">
+                    <CellTemplate>
+                        <MudText Typo="Typo.body2" Style="font-weight: 800;">@context.Item.StaffName</MudText>
+                    </CellTemplate>
+                </PropertyColumn>
+                <PropertyColumn Property="x => x.MonthlySalary" Title="Monthly Salary">
+                    <CellTemplate>
+                        <MudText Typo="Typo.body1" Color="Color.Primary" Style="font-weight: 900;">₹ @context.Item.MonthlySalary.ToString("N0")</MudText>
+                    </CellTemplate>
+                </PropertyColumn>
+                <PropertyColumn Property="x => x.EffectiveDate" Title="Effective Date">
+                    <CellTemplate>
+                        <MudText Typo="Typo.body2">@context.Item.EffectiveDate.ToString("dd MMM yyyy")</MudText>
+                    </CellTemplate>
+                </PropertyColumn>
+                <TemplateColumn Title="Status">
+                    <CellTemplate>
+                        @if (context.Item.IsActive)
+                        {
+                            <MudChip T="string" Color="Color.Success" Size="Size.Small" Variant="Variant.Text" Style="font-weight: 800;">ACTIVE</MudChip>
+                        }
+                        else
+                        {
+                            <MudChip T="string" Color="Color.Default" Size="Size.Small" Variant="Variant.Text" Style="font-weight: 800;">INACTIVE</MudChip>
+                        }
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="Actions" HeaderStyle="text-align: right;" CellStyle="text-align: right;">
+                    <CellTemplate>
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Primary" OnClick="@(() => OpenEditConfigDrawer(context.Item))" />
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteConfig(context.Item.Id))" />
+                    </CellTemplate>
+                </TemplateColumn>
+            </Columns>
+        </MudDataGrid>
+    }
+</MudPaper>
+
+@code {
+    private List<SalaryConfigurationDto> SalaryList = new();
+    private List<UserDto> Users = new();
+    private List<RoleDto> RoleList = new();
+    private bool _loading = true;
+
+    private bool _drawerOpen = false;
+    private bool _isNewConfig = true;
+    private SalaryConfigurationDto _editingConfig = new();
+    private DateTime? _selectedDate = DateTime.Today;
+    private string? _selectedRole;
+    private Guid? _selectedUserId;
+
+    private MudForm _form = null!;
+    private bool _success;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        _loading = true;
+        SalaryList = await PayrollService.GetSalaryConfigurationsAsync();
+        Users = await UserService.GetUsersAsync();
+        RoleList = await UserService.GetRolesAsync();
+        _loading = false;
+    }
+
+    private void OpenAddConfigDrawer()
+    {
+        _editingConfig = new SalaryConfigurationDto { EffectiveDate = DateTime.Today, IsActive = true };
+        _selectedDate = DateTime.Today;
+        _selectedRole = null;
+        _selectedUserId = null;
+        _isNewConfig = true;
+        _drawerOpen = true;
+    }
+
+    private void OpenEditConfigDrawer(SalaryConfigurationDto config)
+    {
+        _editingConfig = new SalaryConfigurationDto
+        {
+            Id = config.Id,
+            UserId = config.UserId,
+            StaffName = config.StaffName,
+            MonthlySalary = config.MonthlySalary,
+            EffectiveDate = config.EffectiveDate,
+            IsActive = config.IsActive
+        };
+        _selectedDate = config.EffectiveDate;
+        _selectedUserId = config.UserId;
+        _isNewConfig = false;
+        _drawerOpen = true;
+    }
+
+    private void CloseDrawer()
+    {
+        _drawerOpen = false;
+    }
+
+    private async Task SaveConfig()
+    {
+        await _form.Validate();
+        if (_success && _selectedDate.HasValue && (_selectedUserId.HasValue || !_isNewConfig))
+        {
+            _editingConfig.EffectiveDate = _selectedDate.Value;
+            if (_isNewConfig)
+            {
+                _editingConfig.UserId = _selectedUserId.Value;
+            }
+            
+            await PayrollService.UpsertSalaryConfigurationAsync(_editingConfig);
+            Snackbar.Add("Salary information updated", Severity.Success);
+            _drawerOpen = false;
+            await LoadData();
+        }
+    }
+
+    private async Task DeleteConfig(Guid id)
+    {
+        await PayrollService.DeleteSalaryConfigurationAsync(id);
+        Snackbar.Add("Salary configuration removed", Severity.Info);
+        await LoadData();
+    }
+}

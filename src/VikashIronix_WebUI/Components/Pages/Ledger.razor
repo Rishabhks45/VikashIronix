@@ -1,0 +1,495 @@
+@page "/ledger"
+@rendermode InteractiveServer
+@using SharedKernel.DTOs.Customers
+@using SharedKernel.DTOs.Billing
+@using VikashIronix_WebUI.Services.Customers
+@using VikashIronix_WebUI.Services.Bills
+@inject ICustomerService CustomerService
+@inject IBillService BillService
+@inject ISnackbar Snackbar
+@inject IJSRuntime JS
+
+<PageTitle>Customer Ledger - The Iron Ledger</PageTitle>
+
+<div style="margin-bottom: 32px;">
+    <MudText Typo="Typo.h5" Style="font-family: var(--mud-typography-h5-font-family); font-weight: 800;">Executive Ledger Architecture</MudText>
+    <MudText Typo="Typo.body2" Color="Color.Secondary">Comprehensive financial oversight of credit cycles, settlement velocity, and institutional liquidity.</MudText>
+</div>
+
+<MudGrid Spacing="4">
+    <!-- Summary Cards -->
+    <MudItem xs="12" md="4">
+        <MudPaper Elevation="0" Style="border: 1px solid var(--mud-palette-divider); border-radius: 16px; border-left: 5px solid var(--mud-palette-primary); background: var(--mud-palette-surface);" Class="pa-6">
+            <MudText Style="font-size: 0.65rem; font-weight: 800; color: var(--mud-palette-text-secondary); letter-spacing: 0.15em; text-transform: uppercase;">Total Institutional Receivables</MudText>
+            <MudText Typo="Typo.h4" Style="font-weight: 900; color: var(--mud-palette-primary);" Class="mt-2">₹ @CustomerFinances.Sum(x => x.Outstanding).ToString("N0")</MudText>
+            <div style="display: flex; align-items: center; gap: 8px; margin-top: 12px;">
+                <MudIcon Icon="@Icons.Material.Filled.TrendingUp" Size="Size.Small" Color="Color.Success" />
+                <MudText Typo="Typo.caption" Color="Color.Secondary">Calculated across @CustomerFinances.Count accounts</MudText>
+            </div>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12" md="4">
+        <MudPaper Elevation="0" Style="border: 1px solid var(--mud-palette-divider); border-radius: 16px; border-left: 5px solid var(--mud-palette-error); background: var(--mud-palette-surface);" Class="pa-6">
+            <MudText Style="font-size: 0.65rem; font-weight: 800; color: var(--mud-palette-text-secondary); letter-spacing: 0.15em; text-transform: uppercase;">Critical Overdue Delta</MudText>
+            <MudText Typo="Typo.h4" Style="font-weight: 900; color: var(--mud-palette-error);" Class="mt-2">₹ @CustomerFinances.Where(x => x.IsOverdue).Sum(x => x.Outstanding).ToString("N0")</MudText>
+            <div style="display: flex; align-items: center; gap: 8px; margin-top: 12px;">
+                <MudIcon Icon="@Icons.Material.Filled.Warning" Size="Size.Small" Color="Color.Error" />
+                <MudText Typo="Typo.caption" Color="Color.Secondary">Accounts exceeding 30-day cycle</MudText>
+            </div>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12" md="4">
+        <MudPaper Elevation="0" Style="border: 1px solid var(--mud-palette-divider); border-radius: 16px; border-left: 5px solid var(--mud-palette-info); background: var(--mud-palette-surface);" Class="pa-6">
+            <MudText Style="font-size: 0.65rem; font-weight: 800; color: var(--mud-palette-text-secondary); letter-spacing: 0.15em; text-transform: uppercase;">Active Market Entities</MudText>
+            <MudText Typo="Typo.h4" Style="font-weight: 900;" Class="mt-2">@CustomerFinances.Count(x => x.IsActive)</MudText>
+            <div style="display: flex; align-items: center; gap: 8px; margin-top: 12px;">
+                <MudIcon Icon="@Icons.Material.Filled.Groups" Size="Size.Small" Color="Color.Info" />
+                <MudText Typo="Typo.caption" Color="Color.Secondary">Registered procurement hubs</MudText>
+            </div>
+        </MudPaper>
+    </MudItem>
+
+    <!-- Account Table -->
+    <MudItem xs="12">
+        <MudPaper Elevation="0" Style="border: 1px solid var(--mud-palette-divider); border-radius: 20px; overflow: hidden;" Class="pa-0">
+            <div style="padding: 24px; border-bottom: 2px solid var(--mud-palette-divider); display: flex; justify-content: space-between; align-items: center; background: var(--mud-palette-surface-grey);">
+                <div>
+                    <MudText Typo="Typo.h6" Style="font-weight: 800;">Trade Account Ledger</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Granular tracking of entity-specific credit nodes.</MudText>
+                </div>
+                <MudTextField @bind-Value="SearchTerm" Placeholder="Search accounts..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Variant="Variant.Outlined" Margin="Margin.Dense" Style="width: 300px; background: white;" />
+            </div>
+
+            <MudTable Items="@FilteredAccounts" Hover="true" Elevation="0" Dense="true" Loading="@IsLoading" Style="background: transparent;">
+                <HeaderContent>
+                    <MudTh Style="font-weight: 800; font-size: 0.75rem; text-transform: uppercase;">Registered Entity / Shop</MudTh>
+                    <MudTh Style="font-weight: 800; font-size: 0.75rem; text-transform: uppercase;">Primary Liaison</MudTh>
+                    <MudTh Style="font-weight: 800; font-size: 0.75rem; text-transform: uppercase;">Outstanding (Dues)</MudTh>
+                    <MudTh Style="font-weight: 800; font-size: 0.75rem; text-transform: uppercase;">Last Settlement</MudTh>
+                    <MudTh Style="font-weight: 800; font-size: 0.75rem; text-transform: uppercase;">Risk Profile</MudTh>
+                    <MudTh Style="text-align: right; font-weight: 800; font-size: 0.75rem; text-transform: uppercase;">Actions</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd>
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div style="width: 32px; height: 32px; background: var(--mud-palette-primary); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 900; color: white; font-size: 0.8rem;">
+                                @context.ShopName.Substring(0, 1)
+                            </div>
+                            <MudText Typo="Typo.body2" Style="font-weight: 800;">@context.ShopName</MudText>
+                        </div>
+                    </MudTd>
+                    <MudTd>
+                        <div style="display: flex; flex-direction: column;">
+                            <MudText Typo="Typo.body2" Style="font-weight: 600;">@context.CustomerName</MudText>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">@context.PhoneNumber</MudText>
+                        </div>
+                    </MudTd>
+                    <MudTd>
+                        <MudText Typo="Typo.body2" Style="font-weight: 900; font-family: 'JetBrains Mono', monospace;" Color="@(context.Outstanding > 0 ? Color.Error : Color.Success)">₹ @context.Outstanding.ToString("N0")</MudText>
+                    </MudTd>
+                    <MudTd>
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">@(context.LastTradeDate?.ToString("dd MMM yyyy") ?? "No Active Trade")</MudText>
+                    </MudTd>
+                    <MudTd>
+                         @if (context.IsOverdue)
+                         {
+                             <MudChip T="string" Color="Color.Error" Size="Size.Small" Variant="Variant.Text" Icon="@Icons.Material.Filled.Warning" Style="font-weight: 950; font-size: 0.65rem; text-transform: uppercase; border: 1px solid rgba(244,63,94,0.3); background: rgba(244,63,94,0.05);">Critical Overdue</MudChip>
+                         }
+                         else
+                         {
+                             <MudChip T="string" Color="Color.Success" Size="Size.Small" Variant="Variant.Text" Icon="@Icons.Material.Filled.CheckCircle" Style="font-weight: 950; font-size: 0.65rem; text-transform: uppercase; border: 1px solid rgba(16,185,129,0.3); background: rgba(16,185,129,0.05);">Clear Account</MudChip>
+                         }
+                    </MudTd>
+                    <MudTd Style="text-align: right;">
+                        <MudIconButton Icon="@Icons.Material.Filled.ReceiptLong" Size="Size.Small" Color="Color.Primary" OnClick="() => OpenStatementConfig(context)" Title="Account Statement" Style="background: var(--mud-palette-action-default-hover);" />
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+<!-- Statement Configuration Overlay -->
+@if (StatementAccount != null)
+{
+    <MudOverlay Visible="OverlayVisible" DarkBackground="true" AutoClose="false" ZIndex="9998">
+        <MudPaper Elevation="25" Style="width: 450px; border-radius: 24px; border: 1px solid var(--mud-palette-divider); overflow: hidden;" Class="pa-0">
+            <div style="padding: 24px; background: var(--mud-palette-primary); color: white;">
+                <MudText Typo="Typo.h6" Style="font-weight: 900; text-transform: uppercase; letter-spacing: 1px;">Statement Dispatch</MudText>
+                <MudText Typo="Typo.caption" Style="color: rgba(255,255,255,0.8);">Configuring fiscal audit for @StatementAccount.ShopName</MudText>
+            </div>
+            
+            <div style="padding: 32px;">
+                <MudText Typo="Typo.subtitle2" Class="mb-4" Style="font-weight: 800; color: var(--mud-palette-text-secondary);">SELECT TEMPORAL SCOPE</MudText>
+                <MudDateRangePicker Label="Audit Duration" 
+                                   @bind-DateRange="_dateRange" 
+                                   Variant="Variant.Outlined" 
+                                   PickerVariant="PickerVariant.Dialog"
+                                   Adornment="Adornment.Start" 
+                                   AdornmentIcon="@Icons.Material.Filled.DateRange" 
+                                   Color="Color.Primary" />
+                
+                <div style="background: var(--mud-palette-background-grey); padding: 16px; border-radius: 12px; margin-top: 24px; border: 1px dashed var(--mud-palette-divider);">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                        <MudText Typo="Typo.caption">Selected Scope:</MudText>
+                        <MudText Typo="Typo.caption" Style="font-weight: 800;">@(_dateRange.Start?.ToString("dd MMM") ?? "...") &mdash; @(_dateRange.End?.ToString("dd MMM yyyy") ?? "...")</MudText>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 12px; margin-top: 32px;">
+                    <MudButton OnClick="() => OverlayVisible = false" Variant="Variant.Text" FullWidth="true" Style="font-weight: 700; height: 48px;">Cancel</MudButton>
+                    <MudButton OnClick="GenerateStatement" Color="Color.Primary" Variant="Variant.Filled" FullWidth="true" DisableElevation="true" Style="font-weight: 900; height: 48px; border-radius: 12px;">Generate Statement</MudButton>
+                </div>
+            </div>
+        </MudPaper>
+    </MudOverlay>
+}
+
+<!-- Statement View Overlay -->
+@if (ShowStatement)
+{
+    <MudOverlay Visible="true" DarkBackground="true" AutoClose="false" ZIndex="9999">
+        <div style="width: 95vw; height: 95vh; display: flex; flex-direction: column; background: white; border-radius: 24px; overflow: hidden; position: relative;">
+            <!-- Header: Interactive & Deep -->
+            <div style="padding: 24px 40px; background: linear-gradient(135deg, #1a1c1c 0%, #121414 100%); color: white; display: flex; justify-content: space-between; align-items: center; border-bottom: 4px solid var(--mud-palette-primary);">
+                <div>
+                    <MudText Typo="Typo.h5" Style="font-weight: 950; text-transform: uppercase; letter-spacing: 2px;">Institutional Fiscal Audit</MudText>
+                    <div style="display: flex; align-items: center; gap: 12px; margin-top: 4px;">
+                        <MudChip T="string" Size="Size.Small" Color="Color.Primary" Variant="Variant.Filled" Style="font-weight: 800; font-size: 0.6rem;">TRADE CYCLE ACTIVE</MudChip>
+                        <MudText Typo="Typo.caption" Style="color: rgba(255,255,255,0.5);">Temporality: @(_dateRange.Start?.ToString("dd MMM yyyy")) to @(_dateRange.End?.ToString("dd MMM yyyy"))</MudText>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 20px; align-items: center;">
+                    <div style="text-align: right; margin-right: 20px;">
+                        <MudText Typo="Typo.caption" Style="color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 1px;">Live Settlement Balance</MudText>
+                        <MudText Typo="Typo.h5" Style="font-weight: 950; color: var(--mud-palette-primary); font-family: 'JetBrains Mono', monospace;">₹ @((StatementRows.LastOrDefault()?.Balance ?? OpeningBalance).ToString("N0"))</MudText>
+                    </div>
+                    <MudButton StartIcon="@Icons.Material.Filled.CloudDownload" Variant="Variant.Filled" Color="Color.Primary" OnClick="PrintStatement" Style="font-weight: 900; border-radius: 12px; padding: 12px 24px;">GENERATE PDF</MudButton>
+                    <MudIconButton Icon="@Icons.Material.Filled.Close" Color="Color.Inherit" OnClick="() => ShowStatement = false" Style="background: rgba(255,255,255,0.05);" />
+                </div>
+            </div>
+
+            <!-- Content Area: The Paper Experience -->
+            <div style="flex-grow: 1; overflow-y: auto; padding: 60px; background: #edeff2;">
+                <div id="statement-print-area" style="max-width: 1100px; margin: 0 auto; background: white; padding: 70px; box-shadow: 0 40px 100px rgba(0,0,0,0.15); border-radius: 8px; position: relative; min-height: 1000px;">
+                    
+                    <!-- Institutional Branding -->
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 60px;">
+                        <div>
+                            <div style="font-size: 32px; font-weight: 950; color: #1a1c1c; letter-spacing: -1px; margin-bottom: 4px;">VIKASH IRON & STEEL</div>
+                            <div style="font-size: 11px; font-weight: 800; color: #64748b; letter-spacing: 2px;">FISCAL DOCUMENTATION HUB &bull; EST. 2004</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-size: 11px; font-weight: 900; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px;">Statement Reference</div>
+                            <div style="font-size: 20px; font-weight: 900; color: #1a1c1c; font-family: 'JetBrains Mono', monospace;">#ACC-@(StatementAccount?.Id.ToString().Substring(0, 8).ToUpper())</div>
+                        </div>
+                    </div>
+
+                    <!-- Market Entity Card -->
+                    <div style="background: #f8fafc; border-radius: 16px; padding: 32px; margin-bottom: 48px; border: 1px solid #e2e8f0; display: grid; grid-template-columns: 2fr 1fr; gap: 40px;">
+                        <div>
+                            <div style="font-size: 10px; font-weight: 900; color: #64748b; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">Institutional Client Profile</div>
+                            <div style="font-size: 24px; font-weight: 900; color: #0f172a; margin-bottom: 4px;">@StatementAccount?.ShopName</div>
+                            <div style="font-size: 14px; font-weight: 700; color: #475569;">Liaison: @StatementAccount?.CustomerName</div>
+                            <div style="font-size: 13px; color: #64748b;">Phone: @StatementAccount?.PhoneNumber</div>
+                        </div>
+                        <div style="border-left: 2px solid #e2e8f0; padding-left: 40px;">
+                            <div style="font-size: 10px; font-weight: 900; color: #64748b; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">Account Summary</div>
+                            <div style="display: flex; flex-direction: column; gap: 8px;">
+                                <div style="display: flex; justify-content: space-between; font-size: 13px;">
+                                    <span>Procured Tasks:</span>
+                                    <span style="font-weight: 800;">@StatementRows.Count(x => x.Debit > 0) Items</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; font-size: 13px;">
+                                    <span>Settlement Flux:</span>
+                                    <span style="font-weight: 800; color: #10b981;">₹ @(StatementRows.Sum(x => x.Credit).ToString("N0"))</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- High-Resolution Ledger Table -->
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="background: #1a1c1c; color: white;">
+                                <th style="text-align: left; padding: 16px 20px; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 1.5px; border-radius: 8px 0 0 8px;">Trade Date</th>
+                                <th style="text-align: left; padding: 16px 20px; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 1.5px;">Reference ID</th>
+                                <th style="text-align: left; padding: 16px 20px; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 1.5px;">Audit Descriptor</th>
+                                <th style="text-align: right; padding: 16px 20px; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 1.5px;">Debit</th>
+                                <th style="text-align: right; padding: 16px 20px; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 1.5px;">Credit</th>
+                                <th style="text-align: right; padding: 16px 20px; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 1.5px; border-radius: 0 8px 8px 0;">Balance</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Balance B/F: Distinguished -->
+                            <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0;">
+                                <td style="padding: 20px; font-size: 12px; font-weight: 800; color: #64748b;">@_dateRange.Start?.ToString("dd MMM yyyy")</td>
+                                <td style="padding: 20px; font-size: 11px; font-weight: 900; letter-spacing: 1px;">SYSTEM-OPEN</td>
+                                <td style="padding: 20px; font-size: 12px; font-weight: 900; color: #1e293b; text-transform: uppercase;">Opening Balance Brought Forward</td>
+                                <td colspan="2"></td>
+                                <td style="text-align: right; padding: 20px; font-size: 14px; font-weight: 900; font-family: 'JetBrains Mono', monospace; color: #1a1c1c;">₹ @OpeningBalance.ToString("N2")</td>
+                            </tr>
+
+                            @foreach (var row in StatementRows)
+                            {
+                                <tr style="border-bottom: 1px solid #f1f5f9; transition: background 0.2s;">
+                                    <td style="padding: 16px 20px; font-size: 13px; color: #475569;">@row.Date.ToString("dd MMM yyyy")</td>
+                                    <td style="padding: 16px 20px; font-size: 12px; font-family: 'JetBrains Mono', monospace; color: #6366f1; font-weight: 700;">@row.Reference</td>
+                                    <td style="padding: 16px 20px; font-size: 13px; font-weight: 600; color: #1e293b;">@row.Description</td>
+                                    <td style="text-align: right; padding: 16px 20px; font-size: 13px; font-family: 'JetBrains Mono', monospace; color: #ef4444; font-weight: 700;">@(row.Debit > 0 ? $"₹ {row.Debit:N2}" : "—")</td>
+                                    <td style="text-align: right; padding: 16px 20px; font-size: 13px; font-family: 'JetBrains Mono', monospace; color: #10b981; font-weight: 700;">@(row.Credit > 0 ? $"₹ {row.Credit:N2}" : "—")</td>
+                                    <td style="text-align: right; padding: 16px 20px; font-size: 14px; font-family: 'JetBrains Mono', monospace; font-weight: 950; color: #0f172a;">₹ @row.Balance.ToString("N2")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+
+                    <!-- Statement Recap -->
+                    <div style="margin-top: 60px; padding: 32px; background: #1a1c1c; border-radius: 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 60px; color: white;">
+                        <div style="opacity: 0.8; border: 1px dashed rgba(255,255,255,0.2); padding: 24px; border-radius: 12px;">
+                            <div style="font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 24px;">Institutional Attestation</div>
+                            <div style="height: 40px; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.1);"></div>
+                            <div style="font-size: 11px; font-weight: 800;">AUTHORIZED FISCAL SIGNATORY &bull; VIKASH IRON</div>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 12px;">
+                            <div style="display: flex; justify-content: space-between; font-size: 13px; opacity: 0.6;">
+                                <span>TOTAL PROCURED (DEBIT)</span>
+                                <span style="font-family: 'JetBrains Mono', monospace;">₹ @StatementRows.Sum(x => x.Debit).ToString("N2")</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; font-size: 13px; opacity: 0.6;">
+                                <span>TOTAL SETTLED (CREDIT)</span>
+                                <span style="font-family: 'JetBrains Mono', monospace;">₹ @StatementRows.Sum(x => x.Credit).ToString("N2")</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 12px; margin-top: 8px;">
+                                <span style="font-size: 16px; font-weight: 950; color: var(--mud-palette-primary);">FINAL SETTLEMENT DUES</span>
+                                <span style="font-size: 18px; font-weight: 950; font-family: 'JetBrains Mono', monospace; color: var(--mud-palette-primary);">₹ @(StatementRows.LastOrDefault()?.Balance ?? OpeningBalance).ToString("N2")</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 100px; text-align: center; border-top: 1px solid #f1f5f9; padding-top: 24px;">
+                        <div style="font-size: 10px; font-weight: 900; color: #94a3b8; text-transform: uppercase; letter-spacing: 2px;">End of Fiscal Statement &mdash; Generated for Institutional Oversight</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </MudOverlay>
+}
+
+@code {
+    private bool IsLoading = true;
+    private string SearchTerm = "";
+    private List<CustomerFinance> CustomerFinances = new();
+    private List<BillDto> AllBills = new();
+
+    private IEnumerable<CustomerFinance> FilteredAccounts => string.IsNullOrWhiteSpace(SearchTerm)
+        ? CustomerFinances
+        : CustomerFinances.Where(x => x.ShopName.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) || x.CustomerName.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase));
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        IsLoading = true;
+        try
+        {
+            var customers = await CustomerService.GetCustomersAsync();
+            AllBills = await BillService.GetBillsAsync();
+
+            CustomerFinances = customers.Select(c => {
+                var cBills = AllBills.Where(b => b.CustomerId == c.Id).ToList();
+                return new CustomerFinance 
+                {
+                    Id = c.Id,
+                    ShopName = c.ShopName,
+                    CustomerName = c.CustomerName,
+                    PhoneNumber = c.PhoneNumber,
+                    Outstanding = cBills.Sum(b => b.GrandTotal - (b.CashPaid + b.AmountPaid)),
+                    LastTradeDate = cBills.OrderByDescending(b => b.BillDate).FirstOrDefault()?.BillDate,
+                    IsActive = c.IsActive,
+                    IsOverdue = cBills.Any(b => (DateTime.Now - b.CreatedAt).TotalDays > 30 && (b.GrandTotal - (b.CashPaid + b.AmountPaid)) > 50)
+                };
+            }).OrderByDescending(x => x.Outstanding).ToList();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Audit sync failed: {ex.Message}", Severity.Error);
+        }
+        IsLoading = false;
+    }
+
+    // ── Statement Logic ─────────────────────────────────────
+    private CustomerFinance? StatementAccount;
+    private bool OverlayVisible = false;
+    private bool ShowStatement = false;
+    private DateRange _dateRange = new DateRange(DateTime.Now.AddMonths(-1), DateTime.Now);
+    
+    private decimal OpeningBalance = 0;
+    private List<StatementRow> StatementRows = new();
+
+    private void OpenStatementConfig(CustomerFinance account)
+    {
+        StatementAccount = account;
+        OverlayVisible = true;
+    }
+
+    private async Task GenerateStatement()
+    {
+        if (StatementAccount == null || !_dateRange.Start.HasValue || !_dateRange.End.HasValue) return;
+
+        var bills = AllBills.Where(b => b.CustomerId == StatementAccount.Id).OrderBy(b => b.BillDate).ToList();
+        
+        // 1. Calculate Opening Balance (Everything before Start date)
+        OpeningBalance = bills.Where(b => b.BillDate.Date < _dateRange.Start.Value.Date)
+                              .Sum(b => b.GrandTotal - (b.CashPaid + b.AmountPaid));
+
+        // 2. Generate Rows for the range
+        StatementRows.Clear();
+        decimal runningBalance = OpeningBalance;
+        
+        foreach (var b in bills.Where(b => b.BillDate.Date >= _dateRange.Start.Value.Date && b.BillDate.Date <= _dateRange.End.Value.Date))
+        {
+            var debit = b.GrandTotal;
+            var credit = b.CashPaid + b.AmountPaid;
+            runningBalance += (debit - credit);
+            
+            StatementRows.Add(new StatementRow 
+            {
+                Date = b.BillDate,
+                Reference = b.BillNumber,
+                Description = string.IsNullOrEmpty(b.Notes) ? "SALES AUDIT" : b.Notes.ToUpper(),
+                Debit = debit,
+                Credit = credit,
+                Balance = runningBalance
+            });
+        }
+
+        OverlayVisible = false;
+        ShowStatement = false; // Bypass the preview popup
+        await PrintStatement(); // Launch the new tab print view
+    }
+
+    private async Task PrintStatement()
+    {
+        try 
+        {
+            Snackbar.Add("Synthesizing institutional PDF buffer...", Severity.Info);
+            var html = BuildStatementHtml();
+            await JS.InvokeVoidAsync("vikashPrint", html);
+            Snackbar.Add("Audit documentation dispatched to printer.", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Print failure: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private string BuildStatementHtml()
+    {
+        if (StatementAccount == null) return "";
+
+        var sb = new System.Text.StringBuilder();
+        sb.Append($"<!DOCTYPE html><html><head><title>TRADE_AUDIT_{StatementAccount?.ShopName}</title><style>");
+        sb.Append("body{font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;padding:40px;color:#0f172a;background:white;}");
+        sb.Append(".paper{max-width:1000px;margin:0 auto;}");
+        sb.Append(".header{display:flex;justify-content:space-between;border-bottom:3px solid #1a1c1c;padding-bottom:20px;margin-bottom:40px;}");
+        sb.Append(".branding h1{font-size:28px;font-weight:900;margin:0;letter-spacing:-1px;}");
+        sb.Append(".branding p{font-size:10px;font-weight:800;color:#64748b;margin:4px 0 0 0;letter-spacing:1px;}");
+        sb.Append(".ref-id{text-align:right;}");
+        sb.Append(".ref-id .label{font-size:10px;font-weight:900;color:#94a3b8;text-transform:uppercase;margin-bottom:4px;}");
+        sb.Append(".ref-id .val{font-size:18px;font-weight:900;font-family:monospace;}");
+        
+        sb.Append(".client-card{background:#f8fafc;padding:24px;border-radius:12px;display:grid;grid-template-columns:2fr 1fr;gap:30px;margin-bottom:40px;border:1px solid #e2e8f0;}");
+        sb.Append(".card-label{font-size:9px;font-weight:900;color:#64748b;text-transform:uppercase;margin-bottom:6px;}");
+        
+        sb.Append("table{width:100%;border-collapse:collapse;margin-bottom:40px;}");
+        sb.Append("th{background:#1a1c1c;color:white;text-align:left;padding:12px 15px;font-size:10px;text-transform:uppercase;letter-spacing:1px;}");
+        sb.Append("td{padding:12px 15px;font-size:12px;border-bottom:1px solid #f1f5f9;}");
+        sb.Append(".mono{font-family:monospace;font-weight:700;}");
+        
+        sb.Append(".recap{background:#1a1c1c;color:white;padding:24px;border-radius:12px;display:grid;grid-template-columns:1fr 1fr;gap:40px;}");
+        sb.Append(".total-line{display:flex;justify-content:space-between;font-size:12px;margin-bottom:8px;opacity:0.8;}");
+        sb.Append(".grand-total{display:flex;justify-content:space-between;font-size:16px;font-weight:900;color:#6ee591;border-top:1px solid rgba(255,255,255,0.1);padding-top:12px;margin-top:8px;}");
+        
+        sb.Append(".footer{margin-top:60px;text-align:center;font-size:10px;color:#94a3b8;border-top:1px solid #f1f5f9;padding-top:20px;}");
+        sb.Append("@media print { .paper { padding: 0 !important; } }");
+        sb.Append("</style>");
+        
+        // Auto-Print Automation
+        sb.Append("<script>window.onload = function() { setTimeout(function() { window.print(); }, 1000); }</script>");
+        
+        sb.Append("</head><body><div class='paper'>");
+        
+        // Header
+        sb.Append("<div class='header'><div class='branding'><h1>VIKASH IRON & STEEL</h1><p>FISCAL DOCUMENTATION HUB &bull; EST. 2004</p></div>");
+        sb.Append($"<div class='ref-id'><div class='label'>Statement Reference</div><div class='val'>#ACC-{StatementAccount.Id.ToString().Substring(0, 8).ToUpper()}</div></div></div>");
+        
+        // Client Card
+        sb.Append("<div class='client-card'><div><div class='card-label'>Institutional Client</div>");
+        sb.Append($"<div style='font-size:20px;font-weight:900;'>{StatementAccount.ShopName}</div><div style='font-size:13px;font-weight:700;color:#475569;'>{StatementAccount.CustomerName}</div></div>");
+        sb.Append($"<div style='border-left:2px solid #e2e8f0;padding-left:24px;'><div class='card-label'>Audit Period</div><div style='font-weight:800;font-size:13px;'>{_dateRange.Start?.ToString("dd MMM yyyy")} to {_dateRange.End?.ToString("dd MMM yyyy")}</div></div></div>");
+
+        // Table
+        sb.Append("<table><thead><tr><th>Date</th><th>Reference</th><th>Description</th><th style='text-align:right'>Debit</th><th style='text-align:right'>Credit</th><th style='text-align:right'>Balance</th></tr></thead><tbody>");
+        
+        // Opening
+        sb.Append($"<tr style='background:#f8fafc;font-weight:800;'><td>{_dateRange.Start?.ToString("dd MMM yyyy")}</td><td>SYSTEM-OPEN</td><td>BAL BROUGHT FORWARD</td><td></td><td></td><td style='text-align:right' class='mono'>₹ {OpeningBalance:N2}</td></tr>");
+        
+        foreach (var row in StatementRows)
+        {
+            sb.Append("<tr>");
+            sb.Append($"<td>{row.Date:dd MMM yyyy}</td>");
+            sb.Append($"<td class='mono' style='color:#6366f1;'>{row.Reference}</td>");
+            sb.Append($"<td style='font-weight:600;'>{row.Description}</td>");
+            sb.Append($"<td style='text-align:right;color:#ef4444;' class='mono'>{(row.Debit > 0 ? "₹ " + row.Debit.ToString("N2") : "—")}</td>");
+            sb.Append($"<td style='text-align:right;color:#10b981;' class='mono'>{(row.Credit > 0 ? "₹ " + row.Credit.ToString("N2") : "—")}</td>");
+            sb.Append($"<td style='text-align:right;font-weight:900;' class='mono'>₹ {row.Balance:N2}</td>");
+            sb.Append("</tr>");
+        }
+        sb.Append("</tbody></table>");
+
+        // Recap
+        var totalDebit = StatementRows.Sum(x => x.Debit);
+        var totalCredit = StatementRows.Sum(x => x.Credit);
+        var finalBal = StatementRows.LastOrDefault()?.Balance ?? OpeningBalance;
+
+        sb.Append("<div class='recap'>");
+        sb.Append("<div style='border:1px dashed rgba(255,255,255,0.2);padding:16px;border-radius:8px;'><div class='card-label' style='color:white;opacity:0.6;'>Institutional Attestation</div><div style='height:30px;'></div><div style='font-size:10px;font-weight:800;'>AUTHORIZED SIGNATURE - VIKASH IRON</div></div>");
+        sb.Append("<div>");
+        sb.Append($"<div class='total-line'><span>TOTAL PROCUREMENT:</span><span class='mono'>₹ {totalDebit:N2}</span></div>");
+        sb.Append($"<div class='total-line'><span>TOTAL SETTLEMENTS:</span><span class='mono'>₹ {totalCredit:N2}</span></div>");
+        sb.Append($"<div class='grand-total'><span>FINAL SETTLEMENT DUES:</span><span class='mono'>₹ {finalBal:N2}</span></div>");
+        sb.Append("</div></div>");
+
+        sb.Append("<div class='footer'>This is an algorithmic fiscal document generated by The Iron Ledger trade suite. &copy; 2026-27</div>");
+        sb.Append("</div></body></html>");
+        
+        return sb.ToString();
+    }
+
+    // ── Inner Classes ──────────────────────────────────────
+    public class CustomerFinance
+    {
+        public Guid Id { get; set; }
+        public string ShopName { get; set; } = "";
+        public string CustomerName { get; set; } = "";
+        public string PhoneNumber { get; set; } = "";
+        public decimal Outstanding { get; set; }
+        public DateTime? LastTradeDate { get; set; }
+        public bool IsOverdue { get; set; }
+        public bool IsActive { get; set; }
+    }
+
+    public class StatementRow
+    {
+        public DateTime Date { get; set; }
+        public string Reference { get; set; } = "";
+        public string Description { get; set; } = "";
+        public decimal Debit { get; set; }
+        public decimal Credit { get; set; }
+        public decimal Balance { get; set; }
+    }
+}

@@ -1,0 +1,166 @@
+@page "/users"
+@using SharedKernel.DTOs.Users
+@using VikashIronix_WebUI.Services.Users
+@using VikashIronix_WebUI.Components.Shared
+@inject IUserService UserService
+@inject IDialogService DialogService
+@rendermode InteractiveServer
+
+<PageTitle>User & Staff Management - The Iron Ledger</PageTitle>
+
+<PageTitle>User & Staff Management - The Iron Ledger</PageTitle>
+
+<MudDrawer @bind-Open="_drawerOpen" Anchor="Anchor.End" Elevation="4" Variant="@DrawerVariant.Temporary" Width="420px" Style="border-left: 1px solid var(--mud-palette-divider);">
+    <MudDrawerHeader>
+        <MudText Typo="Typo.h6" Style="font-family: var(--mud-typography-h6-font-family); font-weight: 800;">@(_isNewUser ? "Add New User" : "Edit User")</MudText>
+    </MudDrawerHeader>
+    <div class="pa-6">
+        <MudForm @ref="_form" @bind-IsValid="@_success">
+            <MudStack Spacing="4">
+                <MudTextField @bind-Value="_editingUser.FirstName" Label="First Name" Required="true" RequiredError="First Name is required" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                <MudTextField @bind-Value="_editingUser.LastName" Label="Last Name" Required="true" RequiredError="Last Name is required" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                <MudTextField @bind-Value="_editingUser.Email" Label="Email Address" Required="true" RequiredError="Email is required" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                <MudSelect T="int?" @bind-Value="_editingUser.RoleId" Label="Role" Required="true" RequiredError="Role is required" Variant="Variant.Outlined" Margin="Margin.Dense">
+                    @foreach (var r in Roles)
+                    {
+                        <MudSelectItem T="int?" Value="@r.Id">@r.Name</MudSelectItem>
+                    }
+                </MudSelect>
+                <MudSwitch @bind-Value="_editingUser.IsActive" Label="Is Active Account" Color="Color.Success" />
+                @if (_isNewUser)
+                {
+                    <MudTextField @bind-Value="_editingUser.Password" Label="Temporary Password" Required="true" RequiredError="Password is required" Variant="Variant.Outlined" Margin="Margin.Dense" InputType="InputType.Password" />
+                }
+                
+                <MudStack Row="true" Spacing="2" Class="mt-4">
+                    <MudButton OnClick="CloseDrawer" Variant="Variant.Text" Color="Color.Secondary" Style="text-transform: none; font-weight: 700;">Cancel</MudButton>
+                    <MudSpacer />
+                    <MudButton Color="Color.Primary" OnClick="SaveUser" Variant="Variant.Filled" Style="font-weight: 800; border-radius: var(--mud-default-borderradius); text-transform: none; padding: 10px 24px;">
+                        @(_isNewUser ? "Create User" : "Save Changes")
+                    </MudButton>
+                </MudStack>
+            </MudStack>
+        </MudForm>
+    </div>
+</MudDrawer>
+
+<div style="margin-bottom: 32px;">
+    <MudText Typo="Typo.h5" Style="font-family: var(--mud-typography-h5-font-family); font-weight: 800;">User & Staff Management</MudText>
+    <MudText Typo="Typo.body2" Color="Color.Secondary">Administer system access, assign organizational roles, and monitor authentication activity logs.</MudText>
+</div>
+
+<MudGrid Spacing="4">
+    <MudItem xs="12">
+        <MudPaper Elevation="0" Style="border: 1px solid var(--mud-palette-divider); border-radius: var(--mud-default-borderradius);" Class="pa-6">
+            <MudStack Row="true" Class="mb-6" AlignItems="AlignItems.Center">
+                <MudText Typo="Typo.h6" Style="font-family: var(--mud-typography-h6-font-family); font-weight: 700;">Staff Accounts</MudText>
+                <MudSpacer />
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="OpenAddUserDrawer" Style="font-weight: 800; border-radius: 8px; text-transform: none;" StartIcon="@Icons.Material.Filled.PersonAdd">Add User</MudButton>
+            </MudStack>
+            <MudDataGrid Items="@StaffList" Hover="true" Elevation="0" Style="background: transparent;" Dense="true" Filterable="true" Loading="@_loading">
+                <Columns>
+                    <TemplateColumn Title="Profile" HeaderStyle="width: 60px;">
+                        <CellTemplate>
+                            <MudAvatar Color="Color.Primary" Size="Size.Small" Style="font-weight: 800;">@(string.IsNullOrWhiteSpace(context.Item.Name) ? '?' : context.Item.Name[0])</MudAvatar>
+                        </CellTemplate>
+                    </TemplateColumn>
+                    <PropertyColumn Property="x => x.Name" Title="Name">
+                        <CellTemplate>
+                            <MudText Typo="Typo.body2" Style="font-weight: 700;">@context.Item.Name</MudText>
+                        </CellTemplate>
+                    </PropertyColumn>
+                    <PropertyColumn Property="x => x.Email" Title="Email" />
+                    <PropertyColumn Property="x => x.Role" Title="Role">
+                        <CellTemplate>
+                            <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="Color.Info" Style="font-weight: 800; font-size: 0.7rem;">@context.Item.Role</MudChip>
+                        </CellTemplate>
+                    </PropertyColumn>
+                    <PropertyColumn Property="x => x.LastLoginAt" Title="Last Login" />
+                    <TemplateColumn Title="Status">
+                        <CellTemplate>
+                            @if (context.Item.IsActive)
+                            {
+                                <MudChip T="string" Color="Color.Success" Size="Size.Small" Variant="Variant.Text" Style="font-weight: 800;">Active</MudChip>
+                            }
+                            else
+                            {
+                                <MudChip T="string" Color="Color.Default" Size="Size.Small" Variant="Variant.Text" Style="font-weight: 800;">Inactive</MudChip>
+                            }
+                        </CellTemplate>
+                    </TemplateColumn>
+                    <TemplateColumn Title="Actions" HeaderStyle="text-align: right;" CellStyle="text-align: right;">
+                        <CellTemplate>
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Primary" OnClick="@(() => OpenEditUserDrawer(context.Item))" />
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" />
+                        </CellTemplate>
+                    </TemplateColumn>
+                </Columns>
+            </MudDataGrid>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code {
+    private List<UserDto> StaffList = new();
+    private List<RoleDto> Roles = new();
+    private bool _loading = true;
+
+    private bool _drawerOpen = false;
+    private bool _isNewUser = true;
+    private UserDto _editingUser = new();
+    private MudForm _form = null!;
+    private bool _success;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Roles = await UserService.GetRolesAsync();
+        await LoadUsers();
+    }
+
+    private async Task LoadUsers()
+    {
+        _loading = true;
+        StaffList = await UserService.GetUsersAsync();
+        _loading = false;
+    }
+
+    private void OpenAddUserDrawer()
+    {
+        _editingUser = new UserDto { IsActive = true };
+        _isNewUser = true;
+        _drawerOpen = true;
+    }
+
+    private void OpenEditUserDrawer(UserDto user)
+    {
+        _editingUser = new UserDto
+        {
+            Id = user.Id,
+            FirstName = user.FirstName,
+            LastName = user.LastName,
+            Email = user.Email,
+            Role = user.Role,
+            RoleId = user.RoleId,
+            IsActive = user.IsActive
+        };
+        _isNewUser = false;
+        _drawerOpen = true;
+    }
+
+    private void CloseDrawer()
+    {
+        _drawerOpen = false;
+    }
+
+    private async Task SaveUser()
+    {
+        await _form.Validate();
+        if (_success)
+        {
+            if (_isNewUser) await UserService.CreateUserAsync(_editingUser);
+            else await UserService.UpdateUserAsync(_editingUser);
+            _drawerOpen = false;
+            await LoadUsers();
+        }
+    }
+}

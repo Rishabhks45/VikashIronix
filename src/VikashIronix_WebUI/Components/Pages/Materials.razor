@@ -1,0 +1,94 @@
+@page "/materials"
+@using SharedKernel.DTOs.Inventory
+@using VikashIronix_WebUI.Services.Inventory
+@inject IInventoryService InventoryService
+@rendermode InteractiveServer
+
+<PageTitle>Material Management - The Iron Ledger</PageTitle>
+
+<MudText Typo="Typo.h5" Class="mb-6" Style="font-family: var(--mud-typography-h5-font-family); font-weight: 800;">Material Management</MudText>
+
+<MudGrid Spacing="4">
+    <MudItem xs="12" md="3">
+        <MudPaper Elevation="0" Style="border-radius: var(--mud-default-borderradius); border-left: 3px solid var(--mud-palette-success);" Class="pa-5">
+            <MudText Typo="Typo.overline" Style="letter-spacing: 0.1em; font-weight: 700;" Color="Color.Secondary">TOTAL STOCK (KG)</MudText>
+            <MudText Typo="Typo.h4" Color="Color.Success" Style="font-family: var(--mud-typography-h4-font-family); font-weight: 800;" Class="mt-2">@TotalStock.ToString("N0")</MudText>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12" md="3">
+        <MudPaper Elevation="0" Style="border-radius: var(--mud-default-borderradius); border-left: 3px solid var(--mud-palette-info);" Class="pa-5">
+            <MudText Typo="Typo.overline" Style="letter-spacing: 0.1em; font-weight: 700;" Color="Color.Secondary">ACTIVE MATERIALS</MudText>
+            <MudText Typo="Typo.h4" Style="font-family: var(--mud-typography-h4-font-family); font-weight: 800;" Class="mt-2">@ActiveMaterialsCount</MudText>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12" md="3">
+        <MudPaper Elevation="0" Style="border-radius: var(--mud-default-borderradius); border-left: 3px solid var(--mud-palette-error);" Class="pa-5">
+            <MudText Typo="Typo.overline" Style="letter-spacing: 0.1em; font-weight: 700;" Color="Color.Secondary">LOW STOCK ALERTS</MudText>
+            <MudText Typo="Typo.h4" Color="Color.Error" Style="font-family: var(--mud-typography-h4-font-family); font-weight: 800;" Class="mt-2">@LowStockCount</MudText>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12" md="3">
+        <MudPaper Elevation="0" Style="border-radius: var(--mud-default-borderradius); border-left: 3px solid var(--mud-palette-primary);" Class="pa-5">
+            <MudText Typo="Typo.overline" Style="letter-spacing: 0.1em; font-weight: 700;" Color="Color.Secondary">CATEGORIES</MudText>
+            <MudText Typo="Typo.h4" Color="Color.Primary" Style="font-family: var(--mud-typography-h4-font-family); font-weight: 800;" Class="mt-2">@CategoryCount</MudText>
+        </MudPaper>
+    </MudItem>
+
+    <MudItem xs="12">
+        <MudPaper Elevation="0" Style="border-radius: var(--mud-default-borderradius);" Class="pa-6">
+            <MudStack Row="true" Class="mb-4" AlignItems="AlignItems.Center">
+                <MudText Typo="Typo.h6" Style="font-family: var(--mud-typography-h6-font-family); font-weight: 700;">Stock Register</MudText>
+                <MudSpacer />
+                <MudButton Href="materials/add" Variant="Variant.Filled" Color="Color.Primary" Style="font-weight: 700; text-transform: none;" StartIcon="@Icons.Material.Filled.Add">Add Material</MudButton>
+            </MudStack>
+            <MudDataGrid Items="@MaterialList" Hover="true" Elevation="0" Dense="true" Loading="@_loading">
+                <Columns>
+                    <PropertyColumn Property="x => x.CategoryName" Title="Category" />
+                    <PropertyColumn Property="x => x.Name" Title="Material Name" />
+                    <PropertyColumn Property="x => x.Shape" Title="Shape" />
+                    <PropertyColumn Property="x => x.StockMT" Title="Stock (KG)" Format="N2" />
+                    <PropertyColumn Property="x => x.GlobalRate" Title="Global Rate" Format="C2" />
+                    <TemplateColumn Title="Status">
+                        <CellTemplate>
+                            @if (!context.Item.IsActive)
+                            {
+                                <MudChip T="string" Color="Color.Default" Size="Size.Small" Variant="Variant.Filled">Inactive</MudChip>
+                            }
+                            else if (context.Item.StockMT < 500)
+                            {
+                                <MudChip T="string" Color="Color.Error" Size="Size.Small" Variant="Variant.Filled">Low Stock</MudChip>
+                            }
+                            else
+                            {
+                                <MudChip T="string" Color="Color.Success" Size="Size.Small" Variant="Variant.Outlined">In Stock</MudChip>
+                            }
+                        </CellTemplate>
+                    </TemplateColumn>
+                </Columns>
+            </MudDataGrid>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code {
+    private List<MaterialDto> MaterialList = new();
+    private bool _loading = true;
+
+    private decimal TotalStock => MaterialList.Sum(m => m.StockMT);
+    private int ActiveMaterialsCount => MaterialList.Count(m => m.IsActive);
+    private int LowStockCount => MaterialList.Count(m => m.StockMT < 500 && m.IsActive);
+    private int CategoryCount => MaterialList.Select(m => m.CategoryId).Distinct().Count();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadMaterials();
+    }
+
+    private async Task LoadMaterials()
+    {
+        _loading = true;
+        MaterialList = await InventoryService.GetMaterialsAsync();
+        _loading = false;
+    }
+}
+

@@ -1,0 +1,28 @@
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'bills' AND schema_id = SCHEMA_ID('dbo'))
+BEGIN
+    CREATE TABLE bills (
+        Id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+        BillNumber NVARCHAR(50) NOT NULL UNIQUE,
+        CustomerId UNIQUEIDENTIFIER NOT NULL,
+        BillDate DATETIME2 NOT NULL DEFAULT SYSDATETIME(),
+        SubTotal DECIMAL(18, 2) NOT NULL DEFAULT 0.00,
+        CGSTAmount DECIMAL(18, 2) NOT NULL DEFAULT 0.00,
+        SGSTAmount DECIMAL(18, 2) NOT NULL DEFAULT 0.00,
+        IGSTAmount DECIMAL(18, 2) NOT NULL DEFAULT 0.00,
+        BhadaAmount DECIMAL(18, 2) NOT NULL DEFAULT 0.00,
+        LabourAmount DECIMAL(18, 2) NOT NULL DEFAULT 0.00,
+        RoundingAdjustment DECIMAL(18, 2) NOT NULL DEFAULT 0.00,
+        GrandTotal DECIMAL(18, 2) NOT NULL DEFAULT 0.00,
+        CashPaid DECIMAL(18, 2) NOT NULL DEFAULT 0.00,
+        AmountPaid DECIMAL(18, 2) NOT NULL DEFAULT 0.00, -- Bank/AC
+        BalanceDue DECIMAL(18, 2) NOT NULL DEFAULT 0.00,
+        TotalWeightKg DECIMAL(18, 3) NOT NULL DEFAULT 0.00,
+        Notes NVARCHAR(MAX) NULL,
+        Status NVARCHAR(50) NOT NULL DEFAULT 'Draft',
+        CreatedAt DATETIME2 NOT NULL DEFAULT SYSDATETIME(),
+        UpdatedAt DATETIME2 NOT NULL DEFAULT SYSDATETIME(),
+        CONSTRAINT FK_Bills_Customers FOREIGN KEY (CustomerId) REFERENCES customers(Id)
+    );
+    PRINT 'Created bills table'
+END
+GO

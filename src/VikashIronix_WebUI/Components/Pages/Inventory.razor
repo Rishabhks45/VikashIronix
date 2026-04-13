@@ -1,0 +1,81 @@
+@page "/inventory"
+@rendermode InteractiveServer
+
+<PageTitle>Inventory Control - The Iron Ledger</PageTitle>
+
+<PageTitle>Inventory Control - The Iron Ledger</PageTitle>
+
+<div style="margin-bottom: 32px;">
+    <MudText Typo="Typo.h5" Style="font-family: var(--mud-typography-h5-font-family); font-weight: 800;">Inventory Control</MudText>
+    <MudText Typo="Typo.body2" Color="Color.Secondary">Real-time surveillance of metallurgical stock levels, storage capacities, and logistical flow.</MudText>
+</div>
+
+<MudGrid Spacing="4">
+    <MudItem xs="12" md="8">
+        <MudPaper Elevation="0" Style="border: 1px solid var(--mud-palette-divider); border-radius: var(--mud-default-borderradius);" Class="pa-6">
+            <MudText Typo="Typo.h6" Class="mb-6" Style="font-family: var(--mud-typography-h6-font-family); font-weight: 700;">Warehouse Overview</MudText>
+            <MudTable Items="@InventoryItems" Hover="true" Elevation="0" Style="background: transparent;" Dense="true" Breakpoint="Breakpoint.Sm">
+                <HeaderContent>
+                    <MudTh Style="color: var(--mud-palette-text-secondary); font-size: 0.65rem; font-weight: 800; letter-spacing: 0.05em;">WAREHOUSE</MudTh>
+                    <MudTh Style="color: var(--mud-palette-text-secondary); font-size: 0.65rem; font-weight: 800; letter-spacing: 0.05em;">MATERIAL</MudTh>
+                    <MudTh Style="color: var(--mud-palette-text-secondary); font-size: 0.65rem; font-weight: 800; letter-spacing: 0.05em;">QTY (MT)</MudTh>
+                    <MudTh Style="color: var(--mud-palette-text-secondary); font-size: 0.65rem; font-weight: 800; letter-spacing: 0.05em;">CAPACITY</MudTh>
+                    <MudTh Style="color: var(--mud-palette-text-secondary); font-size: 0.65rem; font-weight: 800; letter-spacing: 0.05em;">UTILIZATION</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd Style="font-weight: 600;">@context.Warehouse</MudTd>
+                    <MudTd>
+                        <MudChip T="string" Size="Size.Small" Variant="Variant.Filled" Style="background: var(--mud-palette-background-grey); font-weight: 800; font-size: 0.65rem;">@context.Material</MudChip>
+                    </MudTd>
+                    <MudTd Style="font-family: monospace; font-weight: 700;">@context.QtyMT.ToString("N0")</MudTd>
+                    <MudTd Style="font-weight: 600;">@context.Capacity.ToString("N0")</MudTd>
+                    <MudTd>
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                            <MudProgressLinear Value="@context.Utilization" Color="@(context.Utilization > 85 ? Color.Error : Color.Primary)" Rounded="true" Size="Size.Small" Style="height: 6px; flex: 1;" />
+                            <MudText Typo="Typo.caption" Style="font-weight: 800; min-width: 32px;">@(context.Utilization + "%")</MudText>
+                        </MudStack>
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12" md="4">
+        <MudPaper Elevation="0" Style="border: 1px solid var(--mud-palette-divider); border-radius: var(--mud-default-borderradius);" Class="pa-6">
+            <MudText Typo="Typo.h6" Class="mb-6" Style="font-family: var(--mud-typography-h6-font-family); font-weight: 700;">Recent Movements</MudText>
+            <MudTimeline TimelinePosition="TimelinePosition.Start">
+                <MudTimelineItem Color="Color.Primary" Size="Size.Small">
+                    <MudText Typo="Typo.body2" Style="font-weight: 700;">HRC Inbound &mdash; WH-A</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">+450 MT &middot; 2h ago</MudText>
+                </MudTimelineItem>
+                <MudTimelineItem Color="Color.Warning" Size="Size.Small">
+                    <MudText Typo="Typo.body2" Style="font-weight: 700;">Rebar Transfer &mdash; WH-B to WH-C</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">200 MT &middot; 5h ago</MudText>
+                </MudTimelineItem>
+                <MudTimelineItem Color="Color.Error" Size="Size.Small">
+                    <MudText Typo="Typo.body2" Style="font-weight: 700;">Scrap Outbound &mdash; WH-A</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">-800 MT &middot; Yesterday</MudText>
+                </MudTimelineItem>
+            </MudTimeline>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code {
+    public class InventoryItem
+    {
+        public string Warehouse { get; set; } = "";
+        public string Material { get; set; } = "";
+        public int QtyMT { get; set; }
+        public int Capacity { get; set; }
+        public int Utilization { get; set; }
+    }
+
+    private List<InventoryItem> InventoryItems = new()
+    {
+        new InventoryItem { Warehouse = "WH-Alpha", Material = "HRC", QtyMT = 3200, Capacity = 4000, Utilization = 80 },
+        new InventoryItem { Warehouse = "WH-Beta", Material = "Rebar", QtyMT = 90, Capacity = 2000, Utilization = 5 },
+        new InventoryItem { Warehouse = "WH-Gamma", Material = "Scrap", QtyMT = 1800, Capacity = 2000, Utilization = 90 },
+        new InventoryItem { Warehouse = "WH-Delta", Material = "Wire Rod", QtyMT = 900, Capacity = 1500, Utilization = 60 },
+    };
+}
+

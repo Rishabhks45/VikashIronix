@@ -1,0 +1,422 @@
+@page "/materials/add"
+@rendermode InteractiveServer
+@using SharedKernel.DTOs.Inventory
+@inject VikashIronix_WebUI.Services.Inventory.IInventoryService InventoryService
+@inject IDialogService DialogService
+@using VikashIronix_WebUI.Components.Shared
+
+<PageTitle>Material Specification & Add - The Iron Ledger</PageTitle>
+
+<!-- Sub-tabs (matching Stitch tabs) -->
+<MudStack Row="true" AlignItems="AlignItems.Center" Spacing="0" Class="mb-5" Style="border-bottom: 1px solid var(--mud-palette-divider);">
+    <MudButton Variant="Variant.Text" Style="color: var(--mud-palette-text-secondary); border-radius: 0; padding: 10px 18px; text-transform: none; font-weight: 700;">Dashboard</MudButton>
+    <MudButton Variant="Variant.Text" Style="color: var(--mud-palette-primary); border-radius: 0; padding: 10px 18px; border-bottom: 2px solid var(--mud-palette-primary); text-transform: none; font-weight: 700;">Inventory</MudButton>
+    <MudButton Variant="Variant.Text" Style="color: var(--mud-palette-text-secondary); border-radius: 0; padding: 10px 18px; text-transform: none; font-weight: 700;">Orders</MudButton>
+    <MudButton Variant="Variant.Text" Style="color: var(--mud-palette-text-secondary); border-radius: 0; padding: 10px 18px; text-transform: none; font-weight: 700;">Reports</MudButton>
+    <MudSpacer />
+    <MudChip T="string" Icon="@Icons.Material.Filled.TrendingUp" Color="Color.Success" Size="Size.Small" Variant="Variant.Text" Style="font-weight: 800;">
+        Iron Price: +2.4%
+    </MudChip>
+</MudStack>
+
+<MudGrid Spacing="4">
+
+    <!-- LEFT: New Material Entry Form -->
+    <MudItem xs="12" md="4">
+        <MudPaper Elevation="0" Style="border: 1px solid var(--mud-palette-divider); border-radius: var(--mud-default-borderradius);" Class="pa-6">
+
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mb-1">
+                <MudIcon Icon="@Icons.Material.Filled.Category" Color="Color.Primary" Size="Size.Small" />
+                <MudText Typo="Typo.h6" Style="font-family: var(--mud-typography-h6-font-family); font-weight: 700;">New Material Entry</MudText>
+            </MudStack>
+            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-5" Style="display: block;">Configure physical properties for catalog addition.</MudText>
+            <MudStack Spacing="3">
+
+                <!-- 1. Primary Category -->
+                <div>
+                    <MudText Style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.1em; color: var(--mud-palette-text-secondary); margin-bottom: 6px; display: block;">1. PRIMARY CATEGORY</MudText>
+                    <MudSelect T="Guid?" Variant="Variant.Outlined" Value="SelectedCategoryId" ValueChanged="OnCategoryChanged" Margin="Margin.Dense" FullWidth="true" Placeholder="Select Category">
+                        <MudSelectItem Value="@((Guid?)null)">Select Category</MudSelectItem>
+                        @foreach(var cat in RootCategories)
+                        {
+                            <MudSelectItem Value="@((Guid?)cat.Id)">@cat.Name</MudSelectItem>
+                        }
+                    </MudSelect>
+                </div>
+
+                <!-- 2. Sub-Category -->
+                <div>
+                    <MudText Style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.1em; color: var(--mud-palette-text-secondary); margin-bottom: 6px; display: block;">2. SUB-CATEGORY</MudText>
+                    <MudSelect T="Guid?" Variant="Variant.Outlined" @bind-Value="SelectedSubCategoryId" Margin="Margin.Dense" FullWidth="true" Disabled="@(SelectedCategoryId == null)" Placeholder="Select Sub-Category">
+                        <MudSelectItem Value="@((Guid?)null)">Select Sub-Category</MudSelectItem>
+                        @foreach(var sub in AvailableSubCategories)
+                        {
+                            <MudSelectItem Value="@((Guid?)sub.Id)">@sub.Name</MudSelectItem>
+                        }
+                    </MudSelect>
+                </div>
+                
+                <MudDivider Class="my-2" />
+                
+                <MudText Style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.1em; color: var(--mud-palette-text-secondary); margin-bottom: 2px; display: block;">3. MATERIAL SPECIFICATIONS</MudText>
+
+                <!-- Row 1: Thickness + Width -->
+                <MudGrid Spacing="2">
+                    <MudItem xs="6">
+                        <MudText Style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.1em; color: var(--mud-palette-text-secondary); margin-bottom: 6px; display: block;">THICKNESS / GAUGE</MudText>
+                        <MudTextField @bind-Value="Thickness" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                      InputType="InputType.Number" Placeholder="0.0"
+                                      Adornment="Adornment.End" AdornmentText="MM" FullWidth="true" />
+                    </MudItem>
+                    <MudItem xs="6">
+                        <MudText Style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.1em; color: var(--mud-palette-text-secondary); margin-bottom: 6px; display: block;">WIDTH (MM)</MudText>
+                        <MudTextField @bind-Value="Width" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                      InputType="InputType.Number" Placeholder="25" FullWidth="true" />
+                    </MudItem>
+
+                    <!-- Row 2: Length + Sold By -->
+                    <MudItem xs="6">
+                        <MudText Style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.1em; color: var(--mud-palette-text-secondary); margin-bottom: 6px; display: block;">LENGTH (FT)</MudText>
+                        <MudTextField @bind-Value="Length" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                      InputType="InputType.Number" Placeholder="20" FullWidth="true" />
+                    </MudItem>
+                    <MudItem xs="6">
+                        <MudText Style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.1em; color: var(--mud-palette-text-secondary); margin-bottom: 6px; display: block;">SOLD BY</MudText>
+                        <MudSelect T="string" Variant="Variant.Outlined" @bind-Value="SoldBy" Margin="Margin.Dense" FullWidth="true">
+                            <MudSelectItem T="string" Value=@("Kg")>Kg</MudSelectItem>
+                            <MudSelectItem T="string" Value=@("MT")>MT</MudSelectItem>
+                            <MudSelectItem T="string" Value=@("Pcs")>Pcs</MudSelectItem>
+                            <MudSelectItem T="string" Value=@("Feet")>Feet</MudSelectItem>
+                        </MudSelect>
+                    </MudItem>
+                </MudGrid>
+
+                <MudDivider Class="my-2" />
+                
+                <MudText Style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.1em; color: var(--mud-palette-text-secondary); margin-bottom: 2px; display: block;">4. VALUATION BASE</MudText>
+
+                <!-- Base Pricing -->
+                <div>
+                    <MudText Style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.1em; color: var(--mud-palette-text-secondary); margin-bottom: 6px; display: block;">BASE GLOBAL RATE (₹)</MudText>
+                    <MudTextField @bind-Value="GlobalRate" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                  InputType="InputType.Number" Placeholder="e.g. 52000" FullWidth="true" />
+                </div>
+
+                @if (!string.IsNullOrEmpty(SuccessMsg))
+                {
+                    <MudAlert Severity="Severity.Success" Dense="true" Class="mb-2">@SuccessMsg</MudAlert>
+                }
+                @if (!string.IsNullOrEmpty(ErrorMsg))
+                {
+                    <MudAlert Severity="Severity.Error" Dense="true" Class="mb-2">@ErrorMsg</MudAlert>
+                }
+
+                <!-- Add to Catalog Button -->
+                <MudStack Row="true" Spacing="2">
+                    <MudButton Variant="Variant.Filled" FullWidth="true" OnClick="HandleSubmit" StartIcon="@(EditingMaterialId == null ? Icons.Material.Filled.Add : Icons.Material.Filled.SaveAs)"
+                               Color="Color.Primary" Style="font-weight: 800; border-radius: var(--mud-default-borderradius); padding: 12px; text-transform: none; letter-spacing: 0.05em; margin-top: 4px; flex: 2;">
+                        @if (IsSaving)
+                        {
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                            <span>Processing...</span>
+                        }
+                        else
+                        {
+                            <span>@(EditingMaterialId == null ? "Add to Catalog" : "Update Target")</span>
+                        }
+                    </MudButton>
+
+                    @if (EditingMaterialId != null)
+                    {
+                        <MudButton Variant="Variant.Outlined" OnClick="CancelEdit" Color="Color.Error"
+                                   Style="border-radius: var(--mud-default-borderradius); margin-top: 4px; flex: 1; padding: 12px; font-weight: 700; text-transform: none;">
+                            Cancel
+                        </MudButton>
+                    }
+                </MudStack>
+            </MudStack>
+
+            <!-- Market Trend widget -->
+            <div style="margin-top: 24px; background: var(--mud-palette-background-grey); border: 1px solid var(--mud-palette-divider); border-radius: 8px; padding: 14px;">
+                <MudText Style="font-size: 0.6rem; font-weight: 700; letter-spacing: 0.12em; color: var(--mud-palette-text-secondary);">MARKET TREND</MudText>
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mt-1">
+                    <MudIcon Icon="@Icons.Material.Filled.TrendingUp" Color="Color.Success" Size="Size.Small" />
+                    <MudText Color="Color.Success" Style="font-weight: 800; font-size: 0.95rem;">Iron Price: +2.4%</MudText>
+                </MudStack>
+            </div>
+        </MudPaper>
+    </MudItem>
+
+    <!-- RIGHT: Material Catalog Table -->
+    <MudItem xs="12" md="8">
+        <MudPaper Elevation="0" Style="border: 1px solid var(--mud-palette-divider); border-radius: var(--mud-default-borderradius);" Class="pa-6">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-1" Justify="Justify.SpaceBetween">
+                <div>
+                    <MudText Typo="Typo.h6" Style="font-family: var(--mud-typography-h6-font-family); font-weight: 700;">Material Catalog</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Global material registry and valuation overview.</MudText>
+                </div>
+            </MudStack>
+
+            <!-- Filter row -->
+            <MudStack Row="true" Spacing="2" Class="mb-4 mt-3" AlignItems="AlignItems.Center">
+                <MudTextField @bind-Value="SearchQuery" Placeholder="Filter by product name..."
+                               Variant="Variant.Outlined" Margin="Margin.Dense"
+                               Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                               Style="flex: 1;" FullWidth="false" />
+                <MudIconButton Icon="@Icons.Material.Filled.FilterList" Color="Color.Secondary" Style="background: var(--mud-palette-background-grey); border-radius: 8px; border: 1px solid var(--mud-palette-divider);" />
+                <MudIconButton Icon="@Icons.Material.Filled.FileDownload" Color="Color.Secondary" Style="background: var(--mud-palette-background-grey); border-radius: 8px; border: 1px solid var(--mud-palette-divider);" />
+            </MudStack>
+
+            <!-- Table -->
+            <MudTable Items="@FilteredCatalog" Hover="true" Elevation="0" Style="background: transparent;"
+                      Dense="true" Breakpoint="Breakpoint.Sm">
+                <HeaderContent>
+                    <MudTh Style="color: var(--mud-palette-text-secondary); font-size: 0.68rem; letter-spacing: 0.08em; font-weight: 700;">PRODUCT IDENTIFICATION</MudTh>
+                    <MudTh Style="color: var(--mud-palette-text-secondary); font-size: 0.68rem; letter-spacing: 0.08em; font-weight: 700;">STOCK LEVEL</MudTh>
+                    <MudTh Style="color: var(--mud-palette-text-secondary); font-size: 0.68rem; letter-spacing: 0.08em; font-weight: 700;">PRICE CONTEXT</MudTh>
+                    <MudTh Style="color: var(--mud-palette-text-secondary); font-size: 0.68rem; letter-spacing: 0.08em; font-weight: 700;">ACTIONS</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd>
+                        <MudText Typo="Typo.body2" Style="font-weight: 600;">@context.Name</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">@context.CategoryName</MudText>
+                    </MudTd>
+                    <MudTd>
+                        <MudChip T="string" Size="Size.Small" Color="@(context.StockMT > 0 ? Color.Success : Color.Error)" Style="font-size: 0.68rem; font-weight: 800; letter-spacing: 0.05em;" Variant="Variant.Filled">@(context.StockMT > 0 ? "IN STOCK" : "OUT OF STOCK")</MudChip>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-1" Style="display: block;">@context.StockMT.ToString("N2") @context.SoldBy available</MudText>
+                    </MudTd>
+                    <MudTd>
+                        <MudText Style="font-size: 0.68rem; color: var(--mud-palette-text-secondary); letter-spacing: 0.04em;">GLOBAL RATE</MudText>
+                        <MudText Style="font-family: var(--mud-typography-default-font-family); font-weight: 800; color: var(--mud-palette-primary); font-size: 0.95rem;">&#8377;@context.GlobalRate.ToString("N0")</MudText>
+                        <MudText Style="@($"font-size: 0.72rem; color: {(context.LastPurchaseRate > context.GlobalRate ? "var(--mud-palette-error)" : "var(--mud-palette-text-secondary)")};")">
+                            Last: &#8377;@context.LastPurchaseRate.ToString("N0")
+                        </MudText>
+                    </MudTd>
+                    <MudTd>
+                        <MudTooltip Text="Add Stock">
+                            <MudIconButton Icon="@Icons.Material.Filled.AddCircleOutline" Size="Size.Small" Color="Color.Success" OnClick="() => AddStockEntry(context)" />
+                        </MudTooltip>
+                        <MudTooltip Text="Edit Spec">
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Info" OnClick="() => EditEntry(context.Id)" />
+                        </MudTooltip>
+                        <MudTooltip Text="Delete">
+                            <MudIconButton Icon="@Icons.Material.Filled.DeleteOutline" Size="Size.Small" Color="Color.Error" OnClick="() => DeleteEntry(context)" />
+                        </MudTooltip>
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+
+            <!-- Footer stats -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--mud-palette-divider);">
+                <MudStack Row="true" Spacing="4">
+                    <div>
+                        <MudText Style="font-size: 0.62rem; color: var(--mud-palette-text-secondary); letter-spacing: 0.08em;">TOTAL SKU</MudText>
+                        <MudText Style="font-weight: 700;">@Catalog.Count Items</MudText>
+                    </div>
+                    <div>
+                        <MudText Style="font-size: 0.62rem; color: var(--mud-palette-text-secondary); letter-spacing: 0.08em;">INVENTORY VALUE</MudText>
+                        <MudText Color="Color.Primary" Style="font-weight: 800;">&#8377;8.42M</MudText>
+                    </div>
+                </MudStack>
+                <div style="display: flex; align-items: center; gap: 6px;">
+                    <div style="width: 6px; height: 6px; border-radius: 50%; background: var(--mud-palette-success);"></div>
+                    <MudText Style="font-size: 0.68rem; color: var(--mud-palette-text-secondary); letter-spacing: 0.05em;">LIVE MARKET DATA SYNC</MudText>
+                </div>
+            </div>
+        </MudPaper>
+    </MudItem>
+</MudGrid>d>
+
+@code {
+    Guid? SelectedCategoryId = null;
+    Guid? SelectedSubCategoryId = null;
+    
+    List<CategoryDto> AllCategories = new();
+    
+    IEnumerable<CategoryDto> RootCategories => AllCategories.Where(c => c.IsRoot);
+    IEnumerable<CategoryDto> AvailableSubCategories => AllCategories.Where(c => c.ParentId == SelectedCategoryId);
+
+    void OnCategoryChanged(Guid? newCategoryId)
+    {
+        SelectedCategoryId = newCategoryId;
+        SelectedSubCategoryId = null;
+    }
+    
+    decimal? Thickness;
+    decimal? Width;
+    decimal? Length;
+    decimal GlobalRate;
+    string SoldBy = "Kg";
+    string SearchQuery = "";
+    bool IsSaving = false;
+    string SuccessMsg = "";
+    string ErrorMsg = "";
+    Guid? EditingMaterialId = null;
+
+    List<MaterialDto> Catalog = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        AllCategories = await InventoryService.GetCategoriesAsync();
+        Catalog = await InventoryService.GetMaterialsAsync();
+    }
+
+    IEnumerable<MaterialDto> FilteredCatalog => string.IsNullOrWhiteSpace(SearchQuery)
+        ? Catalog
+        : Catalog.Where(c => c.Name.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase) || 
+                             (c.CategoryName != null && c.CategoryName.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase)));
+
+    async Task HandleSubmit()
+    {
+        IsSaving = true;
+        SuccessMsg = "";
+        ErrorMsg = "";
+        
+        if (SelectedSubCategoryId == null) 
+        {
+            IsSaving = false;
+            ErrorMsg = "Please sequentially select a Primary Category and Sub-Category before saving.";
+            return;
+        }
+
+        var subCat = AllCategories.FirstOrDefault(x => x.Id == SelectedSubCategoryId);
+        var name = $"{subCat?.Name} {Thickness}MM x {Width}MM {(Length > 0 ? "x " + Length + "FT" : "")}";
+        
+        if (EditingMaterialId == null)
+        {
+            var request = new CreateMaterialRequest
+            {
+                CategoryId = SelectedSubCategoryId.Value,
+                Name = name,
+                Shape = subCat?.Name ?? "Unknown",
+                Thickness = Thickness,
+                Width = Width,
+                StandardLength = Length,
+                SoldBy = SoldBy,
+                GlobalRate = GlobalRate
+            };
+
+            var validator = new CreateMaterialRequestValidator();
+            var valResult = validator.Validate(request);
+            if (!valResult.IsValid)
+            {
+                IsSaving = false;
+                ErrorMsg = "Validation failed: " + string.Join(" | ", valResult.Errors.Select(e => e.ErrorMessage));
+                return;
+            }
+
+            await InventoryService.CreateMaterialAsync(request);
+            SuccessMsg = $"'{name}' successfully added to catalog.";
+        }
+        else
+        {
+            var updateRequest = new UpdateMaterialRequest
+            {
+                Id = EditingMaterialId.Value,
+                CategoryId = SelectedSubCategoryId.Value,
+                Name = name,
+                Shape = subCat?.Name ?? "Unknown",
+                Thickness = Thickness,
+                Width = Width,
+                StandardLength = Length,
+                SoldBy = SoldBy,
+                GlobalRate = GlobalRate
+            };
+
+            var validator = new UpdateMaterialRequestValidator();
+            var valResult = validator.Validate(updateRequest);
+            if (!valResult.IsValid)
+            {
+                IsSaving = false;
+                ErrorMsg = "Validation failed: " + string.Join(" | ", valResult.Errors.Select(e => e.ErrorMessage));
+                return;
+            }
+
+            await InventoryService.UpdateMaterialAsync(updateRequest);
+            SuccessMsg = $"'{name}' fully synchronized.";
+            EditingMaterialId = null; 
+        }
+
+        Catalog = await InventoryService.GetMaterialsAsync();
+        IsSaving = false;
+    }
+
+    async Task EditEntry(Guid id)
+    {
+        var target = Catalog.FirstOrDefault(m => m.Id == id);
+        if (target != null)
+        {
+            EditingMaterialId = target.Id;
+
+            // Step 1: set the parent category and clear sub-category so items repopulate
+            SelectedCategoryId = AllCategories.FirstOrDefault(c => c.Id == target.CategoryId)?.ParentId;
+            SelectedSubCategoryId = null;
+            StateHasChanged(); // trigger rerender so MudSelect gets its items list
+            await Task.Yield(); // hand off to Blazor's render cycle
+
+            // Step 2: now bind the sub-category — items are ready, name will display correctly
+            SelectedSubCategoryId = target.CategoryId;
+            Thickness = target.Thickness;
+            Width = target.Width;
+            Length = target.StandardLength;
+            SoldBy = target.SoldBy;
+            GlobalRate = target.GlobalRate;
+            SuccessMsg = "";
+        }
+    }
+
+    void CancelEdit()
+    {
+        EditingMaterialId = null;
+        SelectedSubCategoryId = null;
+        Thickness = 0;
+        Width = 0;
+        Length = 0;
+        GlobalRate = 0;
+        SuccessMsg = "";
+    }
+
+    async Task DeleteEntry(MaterialDto target)
+    {
+        var parameters = new DialogParameters<DeleteConfirmationDialog>
+        {
+            { x => x.ContentText, $"Are you completely sure you want to delete material spec '{target.Name}'?" }
+        };
+
+        var dialog = await DialogService.ShowAsync<DeleteConfirmationDialog>("Confirm Deletion", parameters);
+        var result = await dialog.Result;
+
+        if (result != null && !result.Canceled)
+        {
+            await InventoryService.DeleteMaterialAsync(target.Id);
+            Catalog = await InventoryService.GetMaterialsAsync();
+            if (EditingMaterialId == target.Id) CancelEdit();
+            StateHasChanged();
+        }
+    }
+
+    async Task AddStockEntry(MaterialDto target)
+    {
+        var parameters = new DialogParameters<AddStockDialog>
+        {
+            { x => x.MaterialId, target.Id },
+            { x => x.MaterialName, target.Name },
+            { x => x.SoldBy, target.SoldBy }
+        };
+
+        var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
+        var dialog = await DialogService.ShowAsync<AddStockDialog>("Add Stock Entry", parameters, options);
+        var result = await dialog.Result;
+
+        if (result != null && !result.Canceled && result.Data is AddStockRequest request)
+        {
+            var success = await InventoryService.AddStockAsync(request);
+            if (success)
+            {
+                Catalog = await InventoryService.GetMaterialsAsync();
+                SuccessMsg = $"Stock updated: +{request.AddedQuantity} {target.SoldBy} @ ₹{request.PurchaseRate:N0}";
+                StateHasChanged();
+            }
+        }
+    }
+}

@@ -1,0 +1,289 @@
+@page "/holidays"
+@using SharedKernel.DTOs.Holidays
+@using SharedKernel.Enums
+@using VikashIronix_WebUI.Services.Holidays
+@inject IHolidayService HolidayService
+@inject ISnackbar Snackbar
+@rendermode InteractiveServer
+
+<PageTitle>Holiday Management - The Iron Ledger</PageTitle>
+
+<MudDrawer @bind-Open="_drawerOpen" Anchor="Anchor.End" Elevation="8" Variant="@DrawerVariant.Temporary" Width="420px" Style="border-left: 1px solid var(--mud-palette-divider);">
+    <MudDrawerHeader Class="pa-6 border-b">
+        <div class="d-flex align-center">
+            <MudIcon Icon="@Icons.Material.Filled.Event" Color="Color.Primary" Class="mr-3" />
+            <MudText Typo="Typo.h6" Style="font-weight: 800;">@(_isNewHoliday ? "Register New Holiday" : "Edit Holiday")</MudText>
+        </div>
+    </MudDrawerHeader>
+    <div class="pa-6">
+        <MudForm @ref="_form" @bind-IsValid="@_success">
+            <MudStack Spacing="4">
+                <MudTextField @bind-Value="_editingHoliday.Name" Label="Holiday Name" 
+                              Placeholder="e.g. Independence Day"
+                              Required="true" RequiredError="Name is required" 
+                              Variant="Variant.Outlined" Margin="Margin.Dense" />
+                
+                <MudDatePicker @bind-Date="_selectedDate" Label="Date" 
+                               Required="true" RequiredError="Date is required" 
+                               Variant="Variant.Outlined" Margin="Margin.Dense" />
+                
+                <MudSelect T="HolidayType" @bind-Value="_editingHoliday.Type" Label="Type" 
+                           Required="true" Variant="Variant.Outlined" Margin="Margin.Dense">
+                    @foreach (HolidayType type in Enum.GetValues(typeof(HolidayType)))
+                    {
+                        <MudSelectItem Value="@type">@type.ToString()</MudSelectItem>
+                    }
+                </MudSelect>
+                
+                <MudTextField @bind-Value="_editingHoliday.Description" Label="Description" 
+                              Lines="3" Variant="Variant.Outlined" Margin="Margin.Dense"
+                              Placeholder="Notes..." />
+                
+                <div class="pa-4 border-all rounded-lg" style="background: var(--mud-palette-background-grey);">
+                    <MudSwitch @bind-Value="_editingHoliday.IsActive" Color="Color.Success" Label="Is Active" />
+                </div>
+                
+                <MudStack Row="true" Spacing="2" Class="mt-4">
+                    <MudButton OnClick="CloseDrawer" Variant="Variant.Text" Color="Color.Secondary">Cancel</MudButton>
+                    <MudSpacer />
+                    <MudButton Color="Color.Primary" OnClick="SaveHoliday" Variant="Variant.Filled" 
+                               Style="font-weight: 800; border-radius: 8px; text-transform: none; padding: 10px 24px;">
+                        @(_isNewHoliday ? "Create Holiday" : "Save Changes")
+                    </MudButton>
+                </MudStack>
+            </MudStack>
+        </MudForm>
+    </div>
+</MudDrawer>
+
+<div class="mb-10">
+    <div class="d-flex align-end mb-2">
+        <MudIcon Icon="@Icons.Material.Filled.CalendarMonth" Color="Color.Primary" Size="Size.Large" Class="mr-4 mb-1" />
+        <div>
+            <MudText Typo="Typo.h4" Style="font-weight: 900; letter-spacing: -0.04em; line-height: 1;">Holiday Architecture</MudText>
+            <MudText Typo="Typo.body1" Color="Color.Secondary" Class="mt-1" Style="font-weight: 500;">Administer statutory observes and organizational rest cycles for the @DateTime.Today.Year fiscal period.</MudText>
+        </div>
+    </div>
+</div>
+
+<MudGrid Spacing="4" Class="mb-8">
+    <MudItem xs="12" sm="4">
+        <MudPaper Elevation="0" Class="pa-6 d-flex align-center" Style="border: 1px solid var(--mud-palette-divider); border-radius: 16px; background: linear-gradient(135deg, var(--mud-palette-surface) 0%, var(--mud-palette-background-grey) 100%);">
+            <div class="pa-4 mr-4" style="background: rgba(var(--mud-palette-primary-rgb), 0.1); border-radius: 12px;">
+                <MudIcon Icon="@Icons.Material.Filled.EventAvailable" Color="Color.Primary" Size="Size.Large" />
+            </div>
+            <div>
+                <MudText Typo="Typo.h4" Style="font-weight: 900;">@HolidayList.Count(x => x.IsActive)</MudText>
+                <MudText Typo="Typo.caption" Style="text-transform: uppercase; letter-spacing: 0.1em; font-weight: 800;" Color="Color.Secondary">Active Observes</MudText>
+            </div>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12" sm="4">
+        <MudPaper Elevation="0" Class="pa-6 d-flex align-center" Style="border: 1px solid var(--mud-palette-divider); border-radius: 16px;">
+            <div class="pa-4 mr-4" style="background: rgba(var(--mud-palette-info-rgb), 0.1); border-radius: 12px;">
+                <MudIcon Icon="@Icons.Material.Filled.Schedule" Color="Color.Info" Size="Size.Large" />
+            </div>
+            <div>
+                <MudText Typo="Typo.h4" Style="font-weight: 900;">@HolidayList.Count(x => x.Date > DateTime.Today && x.IsActive)</MudText>
+                <MudText Typo="Typo.caption" Style="text-transform: uppercase; letter-spacing: 0.1em; font-weight: 800;" Color="Color.Secondary">Upcoming Cycles</MudText>
+            </div>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12" sm="4">
+        <MudPaper Elevation="0" Class="pa-6 d-flex align-center" Style="border: 1px solid var(--mud-palette-divider); border-radius: 16px;">
+            <div class="pa-4 mr-4" style="background: rgba(var(--mud-palette-warning-rgb), 0.1); border-radius: 12px;">
+                <MudIcon Icon="@Icons.Material.Filled.Star" Color="Color.Warning" Size="Size.Large" />
+            </div>
+            <div>
+                <MudText Typo="Typo.h4" Style="font-weight: 900;">@HolidayList.Count(x => x.Type == HolidayType.Public && x.IsActive)</MudText>
+                <MudText Typo="Typo.caption" Style="text-transform: uppercase; letter-spacing: 0.1em; font-weight: 800;" Color="Color.Secondary">Public Gazettes</MudText>
+            </div>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+<MudPaper Elevation="0" Style="border: 1px solid var(--mud-palette-divider); border-radius: 20px; overflow: hidden;" Class="pa-0">
+    <div class="pa-6 border-b d-flex align-center flex-wrap gap-4" style="background-color: var(--mud-palette-surface);">
+        <MudText Typo="Typo.h6" Style="font-weight: 800;">Observe Registry</MudText>
+        <MudSpacer />
+        
+        <MudTextField @bind-Value="_searchString" 
+                      Placeholder="Search by holiday name or context..." 
+                      Adornment="Adornment.Start" 
+                      AdornmentIcon="@Icons.Material.Filled.Search" 
+                      IconSize="Size.Small" 
+                      Class="mt-0" 
+                      Variant="Variant.Outlined" 
+                      Margin="Margin.Dense"
+                      Style="min-width: 320px; background: var(--mud-palette-background-grey); border-radius: 10px;"
+                      Clearable="true" />
+        
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="OpenAddHolidayDrawer" 
+                   Style="font-weight: 900; border-radius: 12px; text-transform: none; padding: 10px 24px;" 
+                   StartIcon="@Icons.Material.Filled.Add">Register Holiday</MudButton>
+    </div>
+
+    <MudDataGrid Items="@FilteredHolidays" Hover="true" Elevation="0" Style="background: transparent;" 
+                 Dense="true" Loading="@_loading" Bordered="false" Striped="true"
+                 Breakpoint="Breakpoint.Sm" Height="500px" FixedHeader="true">
+        <Columns>
+            <TemplateColumn Title="Scheduled Date" SortBy="x => x.Date" HeaderStyle="font-weight: 800; text-transform: uppercase; font-size: 11px; letter-spacing: 0.05em;">
+                <CellTemplate>
+                    <div class="d-flex align-center">
+                        <div class="mr-3 pa-2 d-flex flex-column align-center justify-center" style="background: var(--mud-palette-background-grey); min-width: 50px; border-radius: 8px; border: 1px solid var(--mud-palette-divider);">
+                            <MudText Typo="Typo.caption" Style="line-height: 1; font-weight: 800; font-size: 10px;" Color="Color.Secondary">@context.Item.Date.ToString("MMM")</MudText>
+                            <MudText Typo="Typo.body2" Style="line-height: 1; font-weight: 900;">@context.Item.Date.Day</MudText>
+                        </div>
+                        <div>
+                            <MudText Typo="Typo.body2" Style="font-weight: 800;">@context.Item.Date.ToString("dddd")</MudText>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">@context.Item.Date.Year</MudText>
+                        </div>
+                    </div>
+                </CellTemplate>
+            </TemplateColumn>
+            
+            <PropertyColumn Property="x => x.Name" Title="Identify" HeaderStyle="font-weight: 800; text-transform: uppercase; font-size: 11px; letter-spacing: 0.05em;">
+                <CellTemplate>
+                    <MudText Typo="Typo.body2" Style="font-weight: 900; color: var(--mud-palette-primary);">@context.Item.Name</MudText>
+                </CellTemplate>
+            </PropertyColumn>
+            
+            <TemplateColumn Title="Categorization" HeaderStyle="font-weight: 800; text-transform: uppercase; font-size: 11px; letter-spacing: 0.05em;">
+                <CellTemplate>
+                    @if (context.Item.Type == HolidayType.Public)
+                    {
+                        <MudChip T="string" Size="Size.Small" Variant="Variant.Filled" Color="Color.Info" Style="font-weight: 900; font-size: 0.65rem; padding: 2px 10px;">PUBLIC GAZETTE</MudChip>
+                    }
+                    else
+                    {
+                        <MudChip T="string" Size="Size.Small" Variant="Variant.Filled" Color="Color.Warning" Style="font-weight: 900; font-size: 0.65rem; padding: 2px 10px;">RESTRICTED</MudChip>
+                    }
+                </CellTemplate>
+            </TemplateColumn>
+            
+            <PropertyColumn Property="x => x.Description" Title="Context" HeaderStyle="font-weight: 800; text-transform: uppercase; font-size: 11px; letter-spacing: 0.05em;">
+                <CellTemplate>
+                    <MudText Typo="Typo.body2" Class="mud-text-secondary" Style="font-size: 0.85rem; max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                        @context.Item.Description
+                    </MudText>
+                </CellTemplate>
+            </PropertyColumn>
+            
+            <TemplateColumn Title="Compliance" HeaderStyle="font-weight: 800; text-transform: uppercase; font-size: 11px; letter-spacing: 0.05em;">
+                <CellTemplate>
+                    @if (context.Item.IsActive)
+                    {
+                        <div class="d-flex align-center">
+                            <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" Class="mr-1" />
+                            <MudText Typo="Typo.caption" Style="font-weight: 800;" Color="Color.Success">ENFORCED</MudText>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="d-flex align-center" style="opacity: 0.5;">
+                            <MudIcon Icon="@Icons.Material.Filled.Cancel" Color="Color.Default" Size="Size.Small" Class="mr-1" />
+                            <MudText Typo="Typo.caption" Style="font-weight: 800;">SUSPENDED</MudText>
+                        </div>
+                    }
+                </CellTemplate>
+            </TemplateColumn>
+            
+            <TemplateColumn Title="Controls" HeaderStyle="text-align: right; font-weight: 800; text-transform: uppercase; font-size: 11px; letter-spacing: 0.05em;" CellStyle="text-align: right;">
+                <CellTemplate>
+                    <MudMenu Icon="@Icons.Material.Filled.MoreVert" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight" Dense="true">
+                        <MudMenuItem OnClick="@(() => OpenEditHolidayDrawer(context.Item))" Icon="@Icons.Material.Filled.Edit" IconColor="Color.Primary">Modify</MudMenuItem>
+                        <MudMenuItem OnClick="@(() => DeleteHoliday(context.Item.Id))" Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error">Permadelete</MudMenuItem>
+                    </MudMenu>
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+    </MudDataGrid>
+</MudPaper>
+
+@code {
+    private List<HolidayDto> HolidayList = new();
+    private bool _loading = true;
+    private string _searchString = "";
+
+    private bool _drawerOpen = false;
+    private bool _isNewHoliday = true;
+    private HolidayDto _editingHoliday = new();
+    private DateTime? _selectedDate = DateTime.Today;
+    private MudForm _form = null!;
+    private bool _success;
+
+    private IEnumerable<HolidayDto> FilteredHolidays => HolidayList
+        .Where(x => string.IsNullOrWhiteSpace(_searchString) 
+            || x.Name.Contains(_searchString, StringComparison.OrdinalIgnoreCase) 
+            || (x.Description?.Contains(_searchString, StringComparison.OrdinalIgnoreCase) ?? false))
+        .OrderBy(x => x.Date);
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadHolidays();
+    }
+
+    private async Task LoadHolidays()
+    {
+        _loading = true;
+        HolidayList = await HolidayService.GetHolidaysAsync();
+        _loading = false;
+    }
+
+    private void OpenAddHolidayDrawer()
+    {
+        _editingHoliday = new HolidayDto { IsActive = true, Type = HolidayType.Public };
+        _selectedDate = DateTime.Today;
+        _isNewHoliday = true;
+        _drawerOpen = true;
+    }
+
+    private void OpenEditHolidayDrawer(HolidayDto holiday)
+    {
+        _editingHoliday = new HolidayDto
+        {
+            Id = holiday.Id,
+            Name = holiday.Name,
+            Date = holiday.Date,
+            Type = holiday.Type,
+            Description = holiday.Description,
+            IsActive = holiday.IsActive
+        };
+        _selectedDate = holiday.Date;
+        _isNewHoliday = false;
+        _drawerOpen = true;
+    }
+
+    private void CloseDrawer()
+    {
+        _drawerOpen = false;
+    }
+
+    private async Task SaveHoliday()
+    {
+        await _form.Validate();
+        if (_success && _selectedDate.HasValue)
+        {
+            _editingHoliday.Date = _selectedDate.Value;
+            if (_isNewHoliday)
+            {
+                await HolidayService.CreateHolidayAsync(_editingHoliday);
+                Snackbar.Add("Holiday statutory cycle registered successfully", Severity.Success);
+            }
+            else
+            {
+                await HolidayService.UpdateHolidayAsync(_editingHoliday);
+                Snackbar.Add("Holiday modifications applied successfully", Severity.Success);
+            }
+            _drawerOpen = false;
+            await LoadHolidays();
+        }
+    }
+
+    private async Task DeleteHoliday(Guid id)
+    {
+        await HolidayService.DeleteHolidayAsync(id);
+        Snackbar.Add("Holiday observe cycle purged from system", Severity.Info);
+        await LoadHolidays();
+    }
+}

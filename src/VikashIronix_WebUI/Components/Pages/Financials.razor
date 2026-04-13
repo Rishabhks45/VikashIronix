@@ -1,0 +1,89 @@
+@page "/financials"
+@rendermode InteractiveServer
+
+<PageTitle>Financials and Tax - The Iron Ledger</PageTitle>
+
+<PageTitle>Financials and Tax - The Iron Ledger</PageTitle>
+
+<div style="margin-bottom: 32px;">
+    <MudText Typo="Typo.h5" Style="font-family: var(--mud-typography-h5-font-family); font-weight: 800;">Financials & Tax Settings</MudText>
+    <MudText Typo="Typo.body2" Color="Color.Secondary">Manage GST registration details, taxation logic, and high-level enterprise fiscal health.</MudText>
+</div>
+
+<MudGrid Spacing="4">
+    <MudItem xs="12" md="6">
+        <MudPaper Elevation="0" Style="border: 1px solid var(--mud-palette-divider); border-radius: var(--mud-default-borderradius);" Class="pa-6">
+            <MudText Typo="Typo.h6" Class="mb-6" Style="font-family: var(--mud-typography-h6-font-family); font-weight: 700;">GST Configuration</MudText>
+            <MudStack Spacing="4">
+                <MudTextField @bind-Value="Gstin" Label="GSTIN" Variant="Variant.Outlined" ReadOnly="true" Margin="Margin.Dense" />
+                <MudTextField @bind-Value="LegalName" Label="Legal Entity Name" Variant="Variant.Outlined" ReadOnly="true" Margin="Margin.Dense" />
+                <MudTextField @bind-Value="StateCode" Label="State Code" Variant="Variant.Outlined" ReadOnly="true" Margin="Margin.Dense" />
+            </MudStack>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12" md="6">
+        <MudPaper Elevation="0" Style="border: 1px solid var(--mud-palette-divider); border-radius: var(--mud-default-borderradius);" Class="pa-6">
+            <MudText Typo="Typo.h6" Class="mb-6" Style="font-family: var(--mud-typography-h6-font-family); font-weight: 700;">Tax Slabs</MudText>
+            <MudTable Items="@TaxSlabs" Hover="true" Elevation="0" Style="background: transparent;" Dense="true" Breakpoint="Breakpoint.Sm">
+                <HeaderContent>
+                    <MudTh Style="color: var(--mud-palette-text-secondary); font-size: 0.65rem; font-weight: 800; letter-spacing: 0.05em;">HSN CODE</MudTh>
+                    <MudTh Style="color: var(--mud-palette-text-secondary); font-size: 0.65rem; font-weight: 800; letter-spacing: 0.05em;">DESCRIPTION</MudTh>
+                    <MudTh Style="color: var(--mud-palette-text-secondary); font-size: 0.65rem; font-weight: 800; letter-spacing: 0.05em;">CGST</MudTh>
+                    <MudTh Style="color: var(--mud-palette-text-secondary); font-size: 0.65rem; font-weight: 800; letter-spacing: 0.05em;">SGST</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd Style="font-family: monospace; font-weight: 700;">@context.HSN</MudTd>
+                    <MudTd>@context.Description</MudTd>
+                    <MudTd Style="font-weight: 600;">@context.CGST</MudTd>
+                    <MudTd Style="font-weight: 600;">@context.SGST</MudTd>
+                </RowTemplate>
+            </MudTable>
+        </MudPaper>
+    </MudItem>
+
+    <MudItem xs="12">
+        <MudPaper Elevation="0" Style="border: 1px solid var(--mud-palette-divider); border-radius: var(--mud-default-borderradius);" Class="pa-6">
+            <MudText Typo="Typo.h6" Class="mb-6" Style="font-family: var(--mud-typography-h6-font-family); font-weight: 700;">Financial Summary (FY 2025-26)</MudText>
+            <MudGrid Spacing="4">
+                <MudItem xs="6" md="3">
+                    <MudText Style="font-size: 0.65rem; font-weight: 800; color: var(--mud-palette-text-secondary); letter-spacing: 0.1em; text-transform: uppercase;">REVENUE</MudText>
+                    <MudText Typo="Typo.h4" Style="font-family: var(--mud-typography-h4-font-family); font-weight: 900; color: var(--mud-palette-primary);" Class="mt-2">&#8377;18.4 Cr</MudText>
+                </MudItem>
+                <MudItem xs="6" md="3">
+                    <MudText Style="font-size: 0.65rem; font-weight: 800; color: var(--mud-palette-text-secondary); letter-spacing: 0.1em; text-transform: uppercase;">GST COLLECTED</MudText>
+                    <MudText Typo="Typo.h4" Style="font-family: var(--mud-typography-h4-font-family); font-weight: 900;" Class="mt-2">&#8377;3.3 Cr</MudText>
+                </MudItem>
+                <MudItem xs="6" md="3">
+                    <MudText Style="font-size: 0.65rem; font-weight: 800; color: var(--mud-palette-text-secondary); letter-spacing: 0.1em; text-transform: uppercase;">EXPENSES</MudText>
+                    <MudText Typo="Typo.h4" Style="font-family: var(--mud-typography-h4-font-family); font-weight: 900; color: var(--mud-palette-error);" Class="mt-2">&#8377;14.1 Cr</MudText>
+                </MudItem>
+                <MudItem xs="6" md="3">
+                    <MudText Style="font-size: 0.65rem; font-weight: 800; color: var(--mud-palette-text-secondary); letter-spacing: 0.1em; text-transform: uppercase;">NET PROFIT</MudText>
+                    <MudText Typo="Typo.h4" Style="font-family: var(--mud-typography-h4-font-family); font-weight: 900; color: var(--mud-palette-primary);" Class="mt-2">&#8377;4.3 Cr</MudText>
+                </MudItem>
+            </MudGrid>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code {
+    string Gstin = "22AAAAA0000A1Z5";
+    string LegalName = "Vikash Iron Private Limited";
+    string StateCode = "22 - Chhattisgarh";
+
+    public class TaxSlab
+    {
+        public string HSN { get; set; } = "";
+        public string Description { get; set; } = "";
+        public string CGST { get; set; } = "";
+        public string SGST { get; set; } = "";
+    }
+
+    private List<TaxSlab> TaxSlabs = new()
+    {
+        new TaxSlab { HSN = "7208", Description = "Hot Rolled Iron Sheets", CGST = "9%", SGST = "9%" },
+        new TaxSlab { HSN = "7214", Description = "Rebar / TMT Bars", CGST = "9%", SGST = "9%" },
+        new TaxSlab { HSN = "7204", Description = "Ferrous Waste and Scrap", CGST = "2.5%", SGST = "2.5%" },
+    };
+}
+

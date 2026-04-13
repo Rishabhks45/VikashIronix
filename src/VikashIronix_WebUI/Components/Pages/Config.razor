@@ -1,0 +1,76 @@
+@page "/config"
+@rendermode InteractiveServer
+
+<PageTitle>System Configuration - The Iron Ledger</PageTitle>
+
+<PageTitle>System Configuration - The Iron Ledger</PageTitle>
+
+<div style="margin-bottom: 32px;">
+    <MudText Typo="Typo.h5" Style="font-family: var(--mud-typography-h5-font-family); font-weight: 800;">System Configuration</MudText>
+    <MudText Typo="Typo.body2" Color="Color.Secondary">Customize global application parameters, notification triggers, and enterprise regional settings.</MudText>
+</div>
+
+<MudGrid Spacing="4">
+    <MudItem xs="12" md="6">
+        <MudPaper Elevation="0" Style="border:1px solid var(--mud-palette-divider); border-radius: var(--mud-default-borderradius);" Class="pa-6">
+            <MudText Typo="Typo.h6" Class="mb-6" Style="font-family: var(--mud-typography-h6-font-family); font-weight: 700;">Company Profile</MudText>
+            <MudStack Spacing="4">
+                <MudTextField @bind-Value="CompanyName" Label="Company Name" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                <MudTextField @bind-Value="CompanyAddress" Label="Registered Address" Variant="Variant.Outlined" Lines="3" Margin="Margin.Dense" />
+                <MudTextField @bind-Value="CompanyPhone" Label="Primary Contact" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" Style="font-weight: 800; border-radius: 8px; text-transform: none; margin-top: 12px; padding: 10px 24px;">Save Configuration</MudButton>
+            </MudStack>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12" md="6">
+        <MudPaper Elevation="0" Style="border: 1px solid var(--mud-palette-divider); border-radius: var(--mud-default-borderradius);" Class="pa-6">
+            <MudText Typo="Typo.h6" Class="mb-6" Style="font-family: var(--mud-typography-h6-font-family); font-weight: 700;">Automation & Notifications</MudText>
+            <MudStack Spacing="1">
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px; border-radius: 8px; background: var(--mud-palette-background-grey); margin-bottom: 8px;">
+                    <MudText Typo="Typo.body2" Style="font-weight: 700;">Low Stock Alerts</MudText>
+                    <MudSwitch T="bool" @bind-Value="LowStockAlerts" Color="Color.Primary" UnCheckedColor="Color.Default" />
+                </div>
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px; border-radius: 8px; background: var(--mud-palette-background-grey); margin-bottom: 8px;">
+                    <MudText Typo="Typo.body2" Style="font-weight: 700;">Payment Due Reminders</MudText>
+                    <MudSwitch T="bool" @bind-Value="PaymentReminders" Color="Color.Primary" UnCheckedColor="Color.Default" />
+                </div>
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px; border-radius: 8px; background: var(--mud-palette-background-grey); margin-bottom: 8px;">
+                    <MudText Typo="Typo.body2" Style="font-weight: 700;">Daily Analytical Email</MudText>
+                    <MudSwitch T="bool" @bind-Value="DailyReportEmail" Color="Color.Primary" UnCheckedColor="Color.Default" />
+                </div>
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px; border-radius: 8px; background: var(--mud-palette-background-grey);">
+                    <MudText Typo="Typo.body2" Style="font-weight: 700;">Real-time Log Audit</MudText>
+                    <MudSwitch T="bool" @bind-Value="TradeConfirmations" Color="Color.Primary" UnCheckedColor="Color.Default" />
+                </div>
+            </MudStack>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12" md="6">
+        <MudPaper Elevation="0" Style="border: 1px solid var(--mud-palette-divider); border-radius: var(--mud-default-borderradius);" Class="pa-6">
+            <MudText Typo="Typo.h6" Class="mb-6" Style="font-family: var(--mud-typography-h6-font-family); font-weight: 700;">Localization & Units</MudText>
+            <MudStack Spacing="4">
+                <MudSelect T="string" Label="Primary Currency" Variant="Variant.Outlined" @bind-Value="SelectedCurrency" Margin="Margin.Dense">
+                    <MudSelectItem T="string" Value=@("INR")>INR - Indian Rupee (₹)</MudSelectItem>
+                    <MudSelectItem T="string" Value=@("USD")>USD - US Dollar ($)</MudSelectItem>
+                    <MudSelectItem T="string" Value=@("EUR")>EUR - Euro (€)</MudSelectItem>
+                </MudSelect>
+                <MudSelect T="string" Label="Weight Metric" Variant="Variant.Outlined" @bind-Value="SelectedUnit" Margin="Margin.Dense">
+                    <MudSelectItem T="string" Value=@("MT")>Metric Tonnes (MT)</MudSelectItem>
+                    <MudSelectItem T="string" Value=@("KG")>Kilograms (KG)</MudSelectItem>
+                </MudSelect>
+            </MudStack>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code {
+    string CompanyName = "Vikash Iron Private Limited";
+    string CompanyAddress = "Plot 14, Industrial Area, Raipur, Chhattisgarh - 492001";
+    string CompanyPhone = "+91 771 4001234";
+    bool LowStockAlerts = true;
+    bool PaymentReminders = true;
+    bool DailyReportEmail = false;
+    bool TradeConfirmations = true;
+    string SelectedCurrency = "INR";
+    string SelectedUnit = "MT";
+}

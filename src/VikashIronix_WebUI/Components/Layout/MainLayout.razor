@@ -1,0 +1,166 @@
+@inherits LayoutComponentBase
+
+<MudThemeProvider @rendermode="InteractiveServer" Theme="AdminTheme" IsDarkMode="_isDarkMode" />
+<MudPopoverProvider @rendermode="InteractiveServer" />
+<MudDialogProvider @rendermode="InteractiveServer" />
+<MudSnackbarProvider @rendermode="InteractiveServer" />
+
+<MudLayout>
+    @if (!_isDarkMode)
+    {
+        <style>
+            :root {
+                --mud-elevation-1: 0 4px 12px rgba(46, 50, 48, 0.04);
+                --mud-elevation-2: 0 6px 16px rgba(46, 50, 48, 0.05);
+                --mud-elevation-3: 0 8px 24px rgba(46, 50, 48, 0.06);
+                --mud-elevation-4: 0 10px 32px rgba(46, 50, 48, 0.07);
+                --mud-default-borderradius: 12px;
+                --mud-appbar-height: 72px;
+                --mud-typography-default-font-family: 'Inter', 'Nunito Sans', sans-serif;
+                --mud-typography-h1-font-family: 'Literata', serif;
+                --mud-typography-h2-font-family: 'Literata', serif;
+                --mud-typography-h3-font-family: 'Literata', serif;
+                --mud-typography-h4-font-family: 'Literata', serif;
+                --mud-typography-h5-font-family: 'Literata', serif;
+                --mud-typography-h6-font-family: 'Literata', serif;
+                --mud-typography-button-text-transform: none;
+                --mud-typography-body1-line-height: 1.6;
+                --mud-typography-body2-line-height: 1.6;
+            }
+            .mud-button { border-radius: 12px !important; text-transform: none !important; font-weight: 700 !important; }
+            .mud-card { border-radius: 16px !important; border: 1px solid rgba(0,0,0,0.05) !important; box-shadow: var(--mud-elevation-1) !important; }
+            .mud-paper { border-radius: 12px !important; }
+            .mud-input-root { border-radius: 12px !important; }
+            .mud-toolbar { height: 72px !important; }
+            
+            /* Enhanced Sidebar Icons for Lite Mode */
+            .mud-nav-link .mud-nav-link-icon-default { color: #4a7c59 !important; }
+            .mud-nav-group-icon { color: #4a7c59 !important; }
+            
+            body, .mud-typography-body1, .mud-typography-body2 { font-family: 'Inter', 'Nunito Sans', sans-serif !important; }
+            .mud-typography-h1, .mud-typography-h2, .mud-typography-h3, .mud-typography-h4, .mud-typography-h5, .mud-typography-h6 { 
+                font-family: 'Literata', serif !important; 
+                font-weight: 700 !important;
+            }
+        </style>
+    }
+
+    <MudAppBar Elevation="1">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
+        <MudText Typo="Typo.h5" Class="ml-3" Style="font-family: 'Literata', serif; font-weight: 800;">The Iron Ledger</MudText>
+        <MudSpacer />
+        <MudIconButton Icon="@(_isDarkMode ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)" Color="Color.Inherit" OnClick="@((e) => _isDarkMode = !_isDarkMode)" />
+        <MudIconButton Icon="@Icons.Material.Filled.Notifications" Color="Color.Inherit" />
+        <MudMenu AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight" Class="ml-4">
+            <ActivatorContent>
+                <MudAvatar Color="Color.Primary" Variant="Variant.Filled" Style="font-weight: 800; font-size: 0.8rem;">@UserInitials</MudAvatar>
+            </ActivatorContent>
+            <ChildContent>
+                <div class="pa-4" style="min-width: 220px;">
+                    <MudText Typo="Typo.subtitle2" Style="font-weight: 800;">@UserName</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">@UserRole</MudText>
+                </div>
+                <MudDivider />
+                <MudMenuItem Icon="@Icons.Material.Filled.Person" Href="/profile" Style="font-size: 0.9rem;">My Profile</MudMenuItem>
+                <MudMenuItem Icon="@Icons.Material.Filled.Settings" Style="font-size: 0.9rem;">Settings</MudMenuItem>
+                <MudDivider />
+                <MudMenuItem Icon="@Icons.Material.Filled.Logout" Color="Color.Error" Style="font-size: 0.9rem;" href="/account/logout">Logout</MudMenuItem>
+            </ChildContent>
+        </MudMenu>
+    </MudAppBar>
+    <MudDrawer @bind-Open="_drawerOpen" Elevation="2" ClipMode="DrawerClipMode.Always">
+        <NavMenu />
+    </MudDrawer>
+    <MudMainContent>
+        <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="my-4 pt-4">
+            @Body
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+
+<div id="blazor-error-ui" data-nosnippet>
+    An unhandled error has occurred.
+    <a href="." class="reload">Reload</a>
+    <span class="dismiss">🗙</span>
+</div>
+@code {
+    [CascadingParameter] private Task<AuthenticationState> authStateTask { get; set; } = default!;
+
+    private string UserName = "Initializing...";
+    private string UserRole = "Staff";
+    private string UserInitials = "??";
+
+    bool _drawerOpen = true;
+    bool _isDarkMode = false;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var authState = await authStateTask;
+        var user = authState.User;
+
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            UserName = user.Identity.Name ?? "System User";
+            
+            // Try to get role
+            UserRole = user.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Role)?.Value ?? "Staff";
+            
+            // Generate initials
+            if (!string.IsNullOrEmpty(UserName))
+            {
+                var parts = UserName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length > 1) 
+                    UserInitials = $"{parts[0][0]}{parts[1][0]}".ToUpper();
+                else if (parts.Length > 0)
+                    UserInitials = parts[0][0].ToString().ToUpper();
+            }
+        }
+    }
+
+    void DrawerToggle()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+
+    private MudTheme AdminTheme = new()
+    {
+        PaletteLight = new()
+        {
+            Primary = "#4a7c59",
+            Secondary = "#705c30",
+            AppbarBackground = "#ffffff",
+            AppbarText = "#4a7c59",
+            Background = "#FAF9F6",
+            Surface = "#ffffff",
+            DrawerBackground = "#FAF9F6",
+            DrawerText = "#2e3230",
+            DrawerIcon = "#4a7c59",
+            ActionDefault = "#4a7c59",
+            TextPrimary = "#2D3436",
+            TextSecondary = "#636E72",
+            Divider = "rgba(74, 124, 89, 0.1)",
+            Tertiary = "#705c30",
+            Success = "#4a7c59",
+            Info = "#705c30",
+            Error = "#9e2a2b",
+            LinesDefault = "rgba(74, 124, 89, 0.08)",
+            TableLines = "rgba(74, 124, 89, 0.05)"
+        },
+        PaletteDark = new()
+        {
+            Primary = "#6ee591",
+            Secondary = "#bdcabc",
+            AppbarBackground = "#1a1c1c",
+            AppbarText = "#6ee591",
+            Background = "#0b0c0c",
+            Surface = "#121414",
+            DrawerBackground = "#0b0c0c",
+            DrawerText = "#bdcabc",
+            DrawerIcon = "#6ee591",
+            ActionDefault = "#6ee591",
+            TextPrimary = "#e2e2e2",
+            TextSecondary = "#bdcabc",
+            Divider = "#2a2d2d"
+        }
+    };
+}

@@ -1,0 +1,74 @@
+@using SharedKernel.DTOs.Inventory
+<MudDialog Style="background: #161916; border: 1px solid #252825; border-radius: 10px;">
+    <TitleContent>
+        <MudText Typo="Typo.h6" Style="font-family: 'Manrope'; font-weight: 700; color: #e2e2e2;">
+            Add Stock: @MaterialName
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudText Typo="Typo.caption" Style="color: #6b726a; display: block; margin-bottom: 20px;">
+            Input the quantity of inbound stock and the base purchase rate you acquired it at.
+        </MudText>
+
+        <MudStack Spacing="3">
+            <div>
+                <MudText Style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.1em; color: #6b726a; margin-bottom: 6px; display: block;">INBOUND QUANTITY (@SoldBy)</MudText>
+                <MudTextField @bind-Value="AddedQuantity" Variant="Variant.Outlined" Margin="Margin.Dense"
+                              InputType="InputType.Number" Placeholder="0.0" FullWidth="true" />
+            </div>
+
+            <div>
+                <MudText Style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.1em; color: #6b726a; margin-bottom: 6px; display: block;">PURCHASE RATE / UNIT (₹)</MudText>
+                <MudTextField @bind-Value="PurchaseRate" Variant="Variant.Outlined" Margin="Margin.Dense"
+                              InputType="InputType.Number" Placeholder="e.g. 52000" FullWidth="true" />
+            </div>
+            
+            @if (!string.IsNullOrEmpty(ErrorMsg))
+            {
+                <MudAlert Severity="Severity.Error" Dense="true" Style="background: #2e1a1a; border: 1px solid #ffb4ab; border-radius: 6px; color: #ffb4ab;">@ErrorMsg</MudAlert>
+            }
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" Style="color: #6b726a; font-weight: 700;">Cancel</MudButton>
+        <MudButton Variant="Variant.Filled" OnClick="Submit" 
+                   Style="background: #6ee591; color: #001a09; font-weight: 700; border-radius: 6px;">Confirm Stock Entry</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public Guid MaterialId { get; set; }
+    [Parameter] public string MaterialName { get; set; } = string.Empty;
+    [Parameter] public string SoldBy { get; set; } = "MT";
+
+    decimal AddedQuantity;
+    decimal PurchaseRate;
+    string ErrorMsg = "";
+
+    void Cancel() => MudDialog.Cancel();
+
+    void Submit()
+    {
+        if (AddedQuantity <= 0)
+        {
+            ErrorMsg = "Inbound quantity must be greater than zero.";
+            return;
+        }
+        if (PurchaseRate <= 0)
+        {
+            ErrorMsg = "Purchase rate must be greater than zero.";
+            return;
+        }
+
+        var request = new AddStockRequest
+        {
+            MaterialId = MaterialId,
+            AddedQuantity = AddedQuantity,
+            PurchaseRate = PurchaseRate
+        };
+
+        MudDialog.Close(DialogResult.Ok(request));
+    }
+}

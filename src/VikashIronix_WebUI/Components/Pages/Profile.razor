@@ -1,0 +1,248 @@
+@page "/profile"
+@using SharedKernel.DTOs.Users
+@using VikashIronix_WebUI.Services.Users
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
+@inject IUserService UserService
+@inject ISnackbar Snackbar
+@inject IDialogService Dialog
+@rendermode InteractiveServer
+
+<PageTitle>User Profile - The Iron Ledger</PageTitle>
+
+@if (_loading)
+{
+    <div style="height: 100vh; display: flex; align-items: center; justify-content: center;">
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
+    </div>
+}
+else
+{
+    <div style="padding: 0 24px 48px; max-width: 1000px; margin: 0 auto; color: var(--mud-palette-text-primary); font-family: var(--mud-typography-default-font-family);">
+        <header style="margin-bottom: 32px; display: flex; align-items: center; justify-content: space-between;">
+            <div>
+                <span style="text-transform: uppercase; letter-spacing: 0.1em; font-size: 12px; font-weight: 700; color: var(--mud-palette-primary); margin-bottom: 4px; display: block;">Account Center</span>
+                <h1 style="font-size: 32px; font-weight: 800; letter-spacing: -0.05em; font-family: var(--mud-typography-h1-font-family); margin: 0;">My Profile</h1>
+            </div>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveProfile" StartIcon="@Icons.Material.Filled.Save" Style="border-radius: var(--mud-default-borderradius, 12px); font-weight: 700; text-transform: none; padding: 10px 24px;">
+                Update Profile
+            </MudButton>
+        </header>
+
+        <MudGrid Spacing="6">
+            <!-- Sidebar: Identity -->
+            <MudItem xs="12" md="4">
+                <MudPaper Elevation="0" Style="background: var(--mud-palette-surface); border-radius: var(--mud-default-borderradius, 12px); overflow: hidden;" Class="pa-8">
+                    <div style="display: flex; flex-direction: column; align-items: center; text-align: center;">
+                        <MudAvatar Style="height: 120px; width: 120px; font-size: 3rem; background: var(--mud-palette-primary-lighten); color: var(--mud-palette-primary); font-family: var(--mud-typography-h1-font-family); font-weight: 800; border: 4px solid var(--mud-palette-background-grey);" Elevation="4">
+                            @GetInitials()
+                        </MudAvatar>
+                        <MudText Typo="Typo.h5" Class="mt-4" Style="font-family: var(--mud-typography-h1-font-family); font-weight: 800;">@_user.FirstName @_user.LastName</MudText>
+                        <MudChip T="string" Color="Color.Primary" Variant="Variant.Outlined" Size="Size.Small" Class="mt-1" Style="font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; font-size: 10px;">@_user.Role</MudChip>
+                        
+                        <div style="width: 100%; border-top: 1px solid var(--mud-palette-divider); margin-top: 24px; padding-top: 24px;">
+                            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px; text-align: left;">
+                                <MudIcon Icon="@Icons.Material.Filled.Email" Size="Size.Small" Color="Color.Secondary" />
+                                <div style="flex-grow: 1; overflow: hidden;">
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">Personal Email</MudText>
+                                    <MudText Typo="Typo.body2" Style="font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">@_user.Email</MudText>
+                                </div>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px; text-align: left;">
+                                <MudIcon Icon="@Icons.Material.Filled.Phone" Size="Size.Small" Color="Color.Secondary" />
+                                <div>
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">Direct Line</MudText>
+                                    <MudText Typo="Typo.body2" Style="font-weight: 600;">@(string.IsNullOrEmpty(_user.PhoneNumber) ? "+91 00000 00000" : _user.PhoneNumber)</MudText>
+                                </div>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 12px; text-align: left;">
+                                <MudIcon Icon="@Icons.Material.Filled.LocationOn" Size="Size.Small" Color="Color.Secondary" />
+                                <div>
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">Location</MudText>
+                                    <MudText Typo="Typo.body2" Style="font-weight: 600;">@(string.IsNullOrEmpty(_user.Location) ? "Not Set" : _user.Location)</MudText>
+                                </div>
+                            </div>
+
+                            <div style="margin-top: 32px;">
+                                <MudButton Variant="Variant.Filled" 
+                                           Color="Color.Error" 
+                                           FullWidth="true" 
+                                           Href="/account/logout"
+                                           StartIcon="@Icons.Material.Filled.Logout"
+                                           Style="border-radius: 12px; font-weight: 800; text-transform: none; padding: 12px; background: rgba(244, 63, 94, 0.1); color: #f43f5e;">
+                                    Terminate Session (Logout)
+                                </MudButton>
+                            </div>
+                        </div>
+                    </div>
+                </MudPaper>
+
+                <MudPaper Elevation="0" Style="background: var(--mud-palette-surface); border-radius: var(--mud-default-borderradius, 12px); margin-top: 24px;" Class="pa-6">
+                    <MudText Typo="Typo.subtitle2" Style="font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; font-size: 11px;" Color="Color.Primary" Class="mb-4">Role Privileges</MudText>
+                    <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                        @if (!string.IsNullOrEmpty(_user.Role))
+                        {
+                            <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text" Icon="@Icons.Material.Filled.Check">@(char.ToUpper(_user.Role[0]) + _user.Role.Substring(1)) Authority</MudChip>
+                        }
+                        <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text" Icon="@Icons.Material.Filled.Check">System Access</MudChip>
+                        @if (!string.IsNullOrEmpty(_user.Role) && _user.Role.Contains("Admin", StringComparison.OrdinalIgnoreCase))
+                        {
+                            <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text" Icon="@Icons.Material.Filled.Check">Global Management</MudChip>
+                        }
+                    </div>
+                </MudPaper>
+            </MudItem>
+
+            <!-- Main Body: Tabs/Settings -->
+            <MudItem xs="12" md="8">
+                <MudTabs Elevation="0" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-0 mt-4" Color="Color.Primary" ActiveTabClass="font-weight-bold">
+                    <MudTabPanel Text="General Info" Icon="@Icons.Material.Filled.Person">
+                        <MudPaper Elevation="0" Style="background: var(--mud-palette-surface); border-radius: var(--mud-default-borderradius, 12px); border: 1px solid var(--mud-palette-divider);" Class="pa-6">
+                            <MudGrid>
+                                <MudItem xs="12" sm="6">
+                                    <MudTextField @bind-Value="_user.FirstName" Label="First Name" Variant="Variant.Outlined" Margin="Margin.Dense" ShrinkLabel="true" />
+                                </MudItem>
+                                <MudItem xs="12" sm="6">
+                                    <MudTextField @bind-Value="_user.LastName" Label="Last Name" Variant="Variant.Outlined" Margin="Margin.Dense" ShrinkLabel="true" />
+                                </MudItem>
+                                <MudItem xs="12">
+                                    <MudTextField @bind-Value="_user.PhoneNumber" Label="Direct Contact (Phone)" Variant="Variant.Outlined" Margin="Margin.Dense" ShrinkLabel="true" />
+                                </MudItem>
+                                <MudItem xs="12" sm="6">
+                                    <MudTextField @bind-Value="_user.Location" Label="Operating Region (Location)" Variant="Variant.Outlined" Margin="Margin.Dense" ShrinkLabel="true" />
+                                </MudItem>
+                                <MudItem xs="12">
+                                    <MudTextField @bind-Value="_user.Bio" Label="Executive Bio" Lines="3" Variant="Variant.Outlined" Margin="Margin.Dense" ShrinkLabel="true" />
+                                </MudItem>
+                            </MudGrid>
+                        </MudPaper>
+                    </MudTabPanel>
+
+                    <MudTabPanel Text="Security" Icon="@Icons.Material.Filled.Security">
+                        <MudPaper Elevation="0" Style="background: var(--mud-palette-surface); border-radius: var(--mud-default-borderradius, 12px); border: 1px solid var(--mud-palette-divider);" Class="pa-6">
+                            <MudText Typo="Typo.h6" Style="font-family: var(--mud-typography-h6-font-family); font-weight: 700;" Class="mb-4">Change Security Protocol (Password)</MudText>
+                            <MudGrid>
+                                <MudItem xs="12">
+                                    <MudTextField T="string" @bind-Value="_newPass" Label="New Access Credential" InputType="InputType.Password" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                                </MudItem>
+                                <MudItem xs="12">
+                                    <MudTextField T="string" @bind-Value="_confirmPass" Label="Confirm Credential" InputType="InputType.Password" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                                </MudItem>
+                            </MudGrid>
+                            <div style="display: flex; justify-content: flex-end; margin-top: 24px;">
+                                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ChangePassword" Style="border-radius: 8px; font-weight: 800;">Commit New Password</MudButton>
+                            </div>
+
+                            <div style="margin-top: 32px; border-top: 1px solid var(--mud-palette-divider); padding-top: 24px;">
+                                <MudText Typo="Typo.h6" Style="font-family: var(--mud-typography-h6-font-family); font-weight: 700;" Class="mb-2">Multi-Factor Gateway</MudText>
+                                <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">Add an extra layer of structural security to your administrator account.</MudText>
+                                <MudSwitch T="bool" Color="Color.Primary" Value="false" Label="Two-Factor Initialization" Disabled="true" />
+                                <MudText Typo="Typo.caption" Color="Color.Info" Style="font-style: italic;">Note: 2FA protocol coming in next system update.</MudText>
+                            </div>
+                        </MudPaper>
+                    </MudTabPanel>
+
+                    <MudTabPanel Text="Activity" Icon="@Icons.Material.Filled.History">
+                        <MudPaper Elevation="0" Style="background: var(--mud-palette-surface); border-radius: var(--mud-default-borderradius, 12px); border: 1px solid var(--mud-palette-divider);" Class="pa-6">
+                            <MudText Typo="Typo.h6" Style="font-family: var(--mud-typography-h6-font-family); font-weight: 700;" Class="mb-4">Ledger Activity Audit</MudText>
+                            
+                            <div style="display: flex; flex-direction: column; gap: 16px;">
+                                <div style="display: flex; gap: 16px; align-items: flex-start;">
+                                    <div style="background: rgba(var(--mud-palette-success-rgb), 0.1); color: var(--mud-palette-success); padding: 8px; border-radius: 8px;">
+                                        <MudIcon Icon="@Icons.Material.Filled.Receipt" Size="Size.Small" />
+                                    </div>
+                                    <div style="flex-grow: 1;">
+                                        <div style="display: flex; justify-content: space-between;">
+                                            <MudText Typo="Typo.body2" Style="font-weight: 700;">Profile Pulse Registered</MudText>
+                                            <MudText Typo="Typo.caption" Color="Color.Secondary">Just now</MudText>
+                                        </div>
+                                        <MudText Typo="Typo.caption" Color="Color.Secondary">System successfully loaded executive informatics for session ID: @(_user.Id.ToString().Substring(0, 8))</MudText>
+                                    </div>
+                                </div>
+                            </div>
+                        </MudPaper>
+                    </MudTabPanel>
+                </MudTabs>
+            </MudItem>
+        </MudGrid>
+    </div>
+}
+
+@code {
+    [CascadingParameter] private Task<AuthenticationState> authStateTask { get; set; } = default!;
+    
+    private UserDto _user = new();
+    private bool _loading = true;
+    private string _newPass = "";
+    private string _confirmPass = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadProfile();
+    }
+
+    private async Task LoadProfile()
+    {
+        _loading = true;
+        var authState = await authStateTask;
+        var user = authState.User;
+
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            var userIdStr = user.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+            if (Guid.TryParse(userIdStr, out Guid userId))
+            {
+                _user = await UserService.GetProfileAsync(userId);
+            }
+        }
+        _loading = false;
+    }
+
+    private string GetInitials()
+    {
+        if (string.IsNullOrEmpty(_user.FirstName)) return "??";
+        var i = _user.FirstName[0].ToString();
+        if (!string.IsNullOrEmpty(_user.LastName)) i += _user.LastName[0];
+        return i.ToUpper();
+    }
+
+    private async Task SaveProfile()
+    {
+        try
+        {
+            await UserService.UpdateProfileAsync(_user);
+            Snackbar.Add("Profile orchestration complete. Analytics synchronized.", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Profile update failed. Structural error detected.", Severity.Error);
+        }
+    }
+
+    private async Task ChangePassword()
+    {
+        if (string.IsNullOrEmpty(_newPass))
+        {
+             Snackbar.Add("Credential cannot be empty.", Severity.Warning);
+             return;
+        }
+
+        if (_newPass != _confirmPass)
+        {
+            Snackbar.Add("Credential mismatch. Please verify security key.", Severity.Error);
+            return;
+        }
+
+        try
+        {
+            await UserService.ChangePasswordAsync(_user.Id, _newPass);
+            _newPass = "";
+            _confirmPass = "";
+            Snackbar.Add("Security protocol rotation successful. Password updated.", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Protocol rotation failed.", Severity.Error);
+        }
+    }
+}

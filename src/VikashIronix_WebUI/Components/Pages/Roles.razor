@@ -1,0 +1,131 @@
+@page "/roles"
+@using SharedKernel.DTOs.Users
+@using VikashIronix_WebUI.Services.Users
+@inject IUserService UserService
+@rendermode InteractiveServer
+
+<PageTitle>Role Management - The Iron Ledger</PageTitle>
+
+<PageTitle>Role Management - The Iron Ledger</PageTitle>
+
+<MudDrawer @bind-Open="_drawerOpen" Anchor="Anchor.End" Elevation="4" Variant="@DrawerVariant.Temporary" Width="420px" Style="border-left: 1px solid var(--mud-palette-divider);">
+    <MudDrawerHeader>
+        <MudText Typo="Typo.h6" Style="font-family: var(--mud-typography-h6-font-family); font-weight: 800;">@(_isNewRole ? "Add New Role" : "Edit Role")</MudText>
+    </MudDrawerHeader>
+    <div class="pa-6">
+        <MudForm @ref="_form" @bind-IsValid="@_success">
+            <MudStack Spacing="4">
+                <MudTextField @bind-Value="_editingRole.Name" Label="Role Name" Required="true" RequiredError="Role Name is required" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                <MudTextField @bind-Value="_editingRole.Description" Label="Description" Lines="3" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                
+                <MudStack Row="true" Spacing="2" Class="mt-4">
+                    <MudButton OnClick="CloseDrawer" Variant="Variant.Text" Color="Color.Secondary" Style="text-transform: none; font-weight: 700;">Cancel</MudButton>
+                    <MudSpacer />
+                    <MudButton Color="Color.Primary" OnClick="SaveRole" Variant="Variant.Filled" Style="font-weight: 800; border-radius: var(--mud-default-borderradius); text-transform: none; padding: 10px 24px;">
+                        @(_isNewRole ? "Create Role" : "Save Changes")
+                    </MudButton>
+                </MudStack>
+            </MudStack>
+        </MudForm>
+    </div>
+</MudDrawer>
+
+<div style="margin-bottom: 32px;">
+    <MudText Typo="Typo.h5" Style="font-family: var(--mud-typography-h5-font-family); font-weight: 800;">Role Management</MudText>
+    <MudText Typo="Typo.body2" Color="Color.Secondary">Define system privilege levels, access control policies, and organizational permissions.</MudText>
+</div>
+
+<MudGrid Spacing="4">
+    <MudItem xs="12">
+        <MudPaper Elevation="0" Style="border: 1px solid var(--mud-palette-divider); border-radius: var(--mud-default-borderradius);" Class="pa-6">
+            <MudStack Row="true" Class="mb-6" AlignItems="AlignItems.Center">
+                <MudText Typo="Typo.h6" Style="font-family: var(--mud-typography-h6-font-family); font-weight: 700;">System Roles</MudText>
+                <MudSpacer />
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="OpenAddRoleDrawer" Style="font-weight: 800; border-radius: 8px; text-transform: none;" StartIcon="@Icons.Material.Filled.Add">Add Role</MudButton>
+            </MudStack>
+            <MudDataGrid Items="@RolesList" Hover="true" Elevation="0" Style="background: transparent;" Dense="true" Filterable="true" Loading="@_loading">
+                <Columns>
+                    <PropertyColumn Property="x => x.Id" Title="ID" HeaderStyle="width: 80px;" />
+                    <PropertyColumn Property="x => x.Name" Title="Role Name">
+                        <CellTemplate>
+                            <MudText Typo="Typo.body2" Style="font-weight: 700;">@context.Item.Name</MudText>
+                        </CellTemplate>
+                    </PropertyColumn>
+                    <PropertyColumn Property="x => x.Description" Title="Description" />
+                    <TemplateColumn Title="Actions" HeaderStyle="text-align: right;" CellStyle="text-align: right;">
+                        <CellTemplate>
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Primary" OnClick="@(() => OpenEditRoleDrawer(context.Item))" />
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteRole(context.Item.Id))" />
+                        </CellTemplate>
+                    </TemplateColumn>
+                </Columns>
+            </MudDataGrid>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code {
+    private List<RoleDto> RolesList = new();
+    private bool _loading = true;
+
+    private bool _drawerOpen = false;
+    private bool _isNewRole = true;
+    private RoleDto _editingRole = new();
+    private MudForm _form = null!;
+    private bool _success;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadRoles();
+    }
+
+    private async Task LoadRoles()
+    {
+        _loading = true;
+        RolesList = await UserService.GetRolesAsync();
+        _loading = false;
+    }
+
+    private void OpenAddRoleDrawer()
+    {
+        _editingRole = new RoleDto();
+        _isNewRole = true;
+        _drawerOpen = true;
+    }
+
+    private void OpenEditRoleDrawer(RoleDto role)
+    {
+        _editingRole = new RoleDto
+        {
+            Id = role.Id,
+            Name = role.Name,
+            Description = role.Description
+        };
+        _isNewRole = false;
+        _drawerOpen = true;
+    }
+
+    private void CloseDrawer()
+    {
+        _drawerOpen = false;
+    }
+
+    private async Task SaveRole()
+    {
+        await _form.Validate();
+        if (_success)
+        {
+            if (_isNewRole) await UserService.CreateRoleAsync(_editingRole);
+            else await UserService.UpdateRoleAsync(_editingRole);
+            _drawerOpen = false;
+            await LoadRoles();
+        }
+    }
+
+    private async Task DeleteRole(int id)
+    {
+        // Typically trigger a confirmation dialog here in standard prod, but executing direct context for this pass:
+        await UserService.DeleteRoleAsync(id);
+        await LoadRoles();
+    }
+}

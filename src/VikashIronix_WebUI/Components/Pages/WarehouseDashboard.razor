@@ -1,0 +1,129 @@
+@page "/warehouse-dashboard"
+@using Microsoft.AspNetCore.Components.Authorization
+@attribute [Authorize(Roles = "Warehouse Staff,Super Admin")]
+@rendermode InteractiveServer
+
+<PageTitle>Logistics Control - The Iron Ledger</PageTitle>
+
+<MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-8" Justify="Justify.SpaceBetween">
+    <div>
+        <MudText Typo="Typo.h5" Style="font-family: var(--mud-typography-h5-font-family); font-weight: 800;">Logistics Control Center</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary">Inventory Node Lifecycle · Real-time Stock Synchronization Active</MudText>
+    </div>
+    <div style="display: flex; gap: 8px;">
+        <MudChip T="string" Icon="@Icons.Material.Filled.Autorenew" Color="Color.Info" Size="Size.Small" Variant="Variant.Text" Style="font-weight: 800;">Node Sync: 100%</MudChip>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" Style="text-transform: none; font-weight: 700; border-radius: 8px;">Record Inward</MudButton>
+    </div>
+</MudStack>
+
+<!-- Warehouse KPIs -->
+<MudGrid Spacing="4" Class="mb-6">
+    <MudItem xs="12" sm="6" md="3">
+        <MudPaper Elevation="0" Style="border: 1px solid var(--mud-palette-divider); border-radius: 12px; border-left: 4px solid var(--mud-palette-info);" Class="pa-6">
+            <MudText Style="font-size: 0.65rem; font-weight: 800; color: var(--mud-palette-text-secondary); letter-spacing: 0.1em; text-transform: uppercase;">ACTIVE STOCK (TOTAL)</MudText>
+            <MudText Typo="Typo.h4" Color="Color.Info" Style="font-family: var(--mud-typography-h4-font-family); font-weight: 900;" Class="mt-2">4,280 MT</MudText>
+            <MudText Typo="Typo.caption" Style="font-weight: 700;">+120 MT since 8:00 AM</MudText>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12" sm="6" md="3">
+        <MudPaper Elevation="0" Style="border: 1px solid var(--mud-palette-divider); border-radius: 12px; border-left: 4px solid var(--mud-palette-warning);" Class="pa-6">
+            <MudText Style="font-size: 0.65rem; font-weight: 800; color: var(--mud-palette-text-secondary); letter-spacing: 0.1em; text-transform: uppercase;">PENDING DISPATCH</MudText>
+            <MudText Typo="Typo.h4" Color="Color.Warning" Style="font-family: var(--mud-typography-h4-font-family); font-weight: 900;" Class="mt-2">14 Loads</MudText>
+            <MudText Typo="Typo.caption" Color="Color.Secondary">3 Priority · 11 Scheduled</MudText>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12" sm="6" md="3">
+        <MudPaper Elevation="0" Style="border: 1px solid var(--mud-palette-divider); border-radius: 12px; border-left: 4px solid var(--mud-palette-error);" Class="pa-6">
+            <MudText Style="font-size: 0.65rem; font-weight: 800; color: var(--mud-palette-text-secondary); letter-spacing: 0.1em; text-transform: uppercase;">CRITICAL SHORTAGE</MudText>
+            <MudText Typo="Typo.h4" Color="Color.Error" Style="font-family: var(--mud-typography-h4-font-family); font-weight: 900;" Class="mt-2">03 SKU</MudText>
+            <MudText Typo="Typo.caption" Color="Color.Error" Style="font-weight: 700;">Action required for TMT 12mm</MudText>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12" sm="6" md="3">
+        <MudPaper Elevation="0" Style="border: 1px solid var(--mud-palette-divider); border-radius: 12px; border-left: 4px solid var(--mud-palette-success);" Class="pa-6">
+            <MudText Style="font-size: 0.65rem; font-weight: 800; color: var(--mud-palette-text-secondary); letter-spacing: 0.1em; text-transform: uppercase;">FACILITY UTILIZATION</MudText>
+            <MudText Typo="Typo.h4" Color="Color.Success" Style="font-family: var(--mud-typography-h4-font-family); font-weight: 900;" Class="mt-2">78%</MudText>
+            <MudText Typo="Typo.caption" Color="Color.Secondary">Capacity optimized</MudText>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+<MudGrid Spacing="4">
+    <!-- Stock Health -->
+    <MudItem xs="12" md="7">
+        <MudPaper Elevation="0" Style="border: 1px solid var(--mud-palette-divider); border-radius: 12px;" Class="pa-6">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-6" Justify="Justify.SpaceBetween">
+                <MudText Typo="Typo.h6" Style="font-family: var(--mud-typography-h6-font-family); font-weight: 700;">Inventory Strategic Pulse</MudText>
+                <div style="display: flex; gap: 8px;">
+                     <MudChip T="string" Color="Color.Success" Size="Size.Small" Variant="Variant.Text">FAST MOVING</MudChip>
+                     <MudChip T="string" Color="Color.Error" Size="Size.Small" Variant="Variant.Text">DEAD STOCK</MudChip>
+                </div>
+            </MudStack>
+            
+            <MudTable Items="@InventoryItems" Hover="true" Elevation="0" Style="background: transparent;" Dense="true">
+                <HeaderContent>
+                    <MudTh>MATERIAL NAME</MudTh>
+                    <MudTh>ON HAND (MT)</MudTh>
+                    <MudTh>RESERVED</MudTh>
+                    <MudTh>VELOCITY</MudTh>
+                    <MudTh>HEALTH</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd Style="font-weight: 700;">@context.Name</MudTd>
+                    <MudTd Style="font-weight: 700;">@context.Stock</MudTd>
+                    <MudTd>@context.Reserved</MudTd>
+                    <MudTd>
+                        <MudRating ReadOnly="true" SelectedValue="@context.Velocity" MaxValue="5" FullIcon="@Icons.Material.Filled.ElectricBolt" EmptyIcon="@Icons.Material.Filled.ElectricBolt" Color="Color.Warning" />
+                    </MudTd>
+                    <MudTd>
+                        <MudProgressLinear Color="@(context.Health > 70 ? Color.Success : context.Health > 30 ? Color.Warning : Color.Error)" Value="@context.Health" Class="my-2" />
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        </MudPaper>
+    </MudItem>
+
+    <!-- Recent Movements -->
+    <MudItem xs="12" md="5">
+        <MudPaper Elevation="0" Style="border: 1px solid var(--mud-palette-divider); border-radius: 12px;" Class="pa-6">
+            <MudText Typo="Typo.h6" Class="mb-6" Style="font-family: var(--mud-typography-h6-font-family); font-weight: 700;">Recent Stock Velocity</MudText>
+            <div style="max-height: 480px; overflow-y: auto;">
+                <MudTimeline TimelineOrientation="TimelineOrientation.Vertical" TimelinePosition="TimelinePosition.Start">
+                    @foreach (var move in Movements)
+                    {
+                        <MudTimelineItem Color="@(move.Type == "IN" ? Color.Success : Color.Warning)" Size="Size.Small">
+                            <ItemContent>
+                                <MudText Typo="Typo.body2" Style="font-weight: 700;">@move.Type: @move.Material</MudText>
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">@move.Timestamp · @move.User</MudText>
+                                <MudText Typo="Typo.body2" Color="@(move.Type == "IN" ? Color.Primary : Color.Secondary)">@move.Qty MT</MudText>
+                            </ItemContent>
+                        </MudTimelineItem>
+                    }
+                </MudTimeline>
+            </div>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code {
+    record InventoryHealth(string Name, int Stock, int Reserved, int Velocity, int Health);
+    record StockMovement(string Material, string Qty, string Type, string Timestamp, string User);
+
+    List<InventoryHealth> InventoryItems = new()
+    {
+        new("12mm TMT Bars (Fe500D)", 140, 80, 5, 12),
+        new("8mm HR Sheets (SS304)", 2100, 320, 4, 85),
+        new("Galvanized Wire (20G)", 80, 10, 1, 40),
+        new("MS Flat (40x6)", 450, 50, 3, 62),
+        new("Scrap Iron HMS-1", 1500, 0, 4, 90),
+    };
+
+    List<StockMovement> Movements = new()
+    {
+        new("12mm TMT Bars", "42.5", "OUT", "10:45 AM", "Rajesh Y."),
+        new("8mm HR Sheets", "120.0", "IN", "09:30 AM", "Sumit K."),
+        new("Scrap Iron HMS-1", "250.0", "IN", "08:15 AM", "Warehouse-01"),
+        new("MS Flat (40x6)", "15.0", "OUT", "Yesterday", "Raju Y."),
+        new("Galvanized Wire", "2.5", "OUT", "Yesterday", "Sumit K."),
+    };
+}

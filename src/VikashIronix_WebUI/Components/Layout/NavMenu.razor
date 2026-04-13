@@ -1,0 +1,56 @@
+@using Microsoft.AspNetCore.Components.Authorization
+@inject AuthenticationStateProvider AuthStateProvider
+
+<MudNavMenu Style="font-family: var(--mud-typography-default-font-family); font-size: 0.95rem;">
+    <AuthorizeView Roles="Super Admin,Accountant">
+        <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">Executive Dashboard</MudNavLink>
+    </AuthorizeView>
+    <AuthorizeView Roles="Warehouse Staff">
+        <MudNavLink Href="/warehouse-dashboard" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">Logistics Dashboard</MudNavLink>
+    </AuthorizeView>
+    
+    <AuthorizeView Roles="Accountant,Super Admin">
+        <Authorized>
+            <MudNavGroup Title="Trade Portfolio" Icon="@Icons.Material.Filled.ReceiptLong" Expanded="true">
+                <MudNavLink Href="billing/create" Icon="@Icons.Material.Filled.AddCard">Generate Invoice</MudNavLink>
+                <MudNavLink Href="financials/daily" Icon="@Icons.Material.Filled.Analytics">Daily Revenue Audit</MudNavLink>
+                <MudNavLink Href="ledger" Icon="@Icons.Material.Filled.MenuBook">Trade Ledger</MudNavLink>
+            </MudNavGroup>
+        </Authorized>
+    </AuthorizeView>
+
+    <AuthorizeView Roles="Accountant,Super Admin,Warehouse Staff">
+        <Authorized>
+            <MudNavGroup Title="Logistics Core" Icon="@Icons.Material.Filled.Inventory2" Expanded="false">
+                <MudNavLink Href="materials" Icon="@Icons.Material.Filled.ViewList">Material Catalog</MudNavLink>
+                
+                <AuthorizeView Roles="Super Admin" Context="inner">
+                    <MudNavLink Href="materials/add" Icon="@Icons.Material.Filled.AddCircle">Material Ingest</MudNavLink>
+                    <MudNavLink Href="materials/subcategories" Icon="@Icons.Material.Filled.Hub">Sub-Category Mapping</MudNavLink>
+                    <MudNavLink Href="categories/add" Icon="@Icons.Material.Filled.AccountTree">Resource Groups</MudNavLink>
+                </AuthorizeView>
+                
+                <MudNavLink Href="inventory" Icon="@Icons.Material.Filled.Warehouse">Inventory Pulse</MudNavLink>
+            </MudNavGroup>
+        </Authorized>
+    </AuthorizeView>
+
+    <AuthorizeView Roles="Accountant,Super Admin">
+        <Authorized>
+            <MudNavLink Href="customers" Icon="@Icons.Material.Filled.Store">Entity Profiles</MudNavLink>
+            <MudNavLink Href="financials" Icon="@Icons.Material.Filled.AccountBalance">Fiscal Overview</MudNavLink>
+        </Authorized>
+    </AuthorizeView>
+    
+    <AuthorizeView Roles="Super Admin">
+        <Authorized>
+            <MudNavGroup Title="Administrative Suite" Icon="@Icons.Material.Filled.AdminPanelSettings" Expanded="false">
+                <MudNavLink Href="users" Icon="@Icons.Material.Filled.People">Staff Accounts</MudNavLink>
+                <MudNavLink Href="holidays" Icon="@Icons.Material.Filled.Event">Holiday Calendar</MudNavLink>
+                <MudNavLink Href="salary-configuration" Icon="@Icons.Material.Filled.Payments">Salary Pricing</MudNavLink>
+                <MudNavLink Href="roles" Icon="@Icons.Material.Filled.Security">Privilege Control</MudNavLink>
+                <MudNavLink Href="config" Icon="@Icons.Material.Filled.Settings">System Dynamics</MudNavLink>
+            </MudNavGroup>
+        </Authorized>
+    </AuthorizeView>
+</MudNavMenu>
