@@ -6,6 +6,7 @@
 @inject ISnackbar Snackbar
 @inject IJSRuntime JS
 @inject AuthenticationStateProvider AuthStateProvider
+@using OfficeOpenXml
 
 <PageTitle>Daily Revenue Audit - The Iron Ledger</PageTitle>
 
@@ -124,15 +125,30 @@
                 </MudTd>
             </RowTemplate>
             <FooterContent>
-                <MudTableFooter>
-                    <MudTd Style="font-weight: 950; text-transform: uppercase; padding: 12px; font-size: 0.75rem; letter-spacing: 0.05em; color: var(--mud-palette-text-secondary);">FISCAL TOTALS</MudTd>
-                    <MudTd Style="text-align: center; font-weight: 950; font-size: 0.85rem; font-family: 'JetBrains Mono', monospace; padding: 12px;">@FilteredBills.Sum(b => b.TotalWeightKg).ToString("N0")</MudTd>
-                    <MudTd Style="text-align: center; font-weight: 950; font-size: 0.95rem; font-family: 'JetBrains Mono', monospace; color: var(--mud-palette-primary); padding: 12px;">₹@FilteredBills.Sum(b => b.GrandTotal).ToString("N0")</MudTd>
-                    <MudTd Style="text-align: center; font-weight: 950; font-size: 0.95rem; font-family: 'JetBrains Mono', monospace; color: #f59e0b; padding: 12px;">₹@FilteredBills.Sum(b => b.CashPaid).ToString("N0")</MudTd>
-                    <MudTd Style="text-align: center; font-weight: 950; font-size: 0.95rem; font-family: 'JetBrains Mono', monospace; color: var(--mud-palette-success); padding: 12px;">₹@FilteredBills.Sum(b => b.AmountPaid).ToString("N0")</MudTd>
-                    <MudTd Style="text-align: center; font-weight: 950; font-size: 0.95rem; font-family: 'JetBrains Mono', monospace; color: var(--mud-palette-error); padding: 12px;">₹@FilteredBills.Sum(b => b.BalanceDue).ToString("N0")</MudTd>
-                    <MudTd />
-                </MudTableFooter>
+                <MudTd class="mud-table-cell"
+                       style="width: 25%; padding: 16px 12px; font-weight: 900; color: #ffffff; font-size: 0.8rem; white-space: nowrap; background: #2c73d2;">
+                    GRAND TOTAL (कुल योग)
+                </MudTd>
+
+                <MudTd Style="text-align: center; font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 0.85rem; padding: 12px; color: #ffffff; background: #2c73d2;">
+                    @FilteredBills.Sum(b => b.TotalWeightKg).ToString("N0")
+                </MudTd>
+
+                <MudTd Style="text-align: center; font-family: 'JetBrains Mono', monospace; font-weight: 800; color: #ffffff; font-size: 0.85rem; padding: 12px; background: #2c73d2;">
+                    ₹@FilteredBills.Sum(b => b.GrandTotal).ToString("N0")
+                </MudTd>
+
+                <MudTd Style="text-align: center; font-family: 'JetBrains Mono', monospace; font-weight: 800; color: #ffffff; font-size: 0.85rem; padding: 12px; background: #2c73d2;">
+                    ₹@FilteredBills.Sum(b => b.CashPaid).ToString("N0")
+                </MudTd>
+
+                <MudTd Style="text-align: center; font-family: 'JetBrains Mono', monospace; font-weight: 800; color: #ffffff; font-size: 0.85rem; padding: 12px; background: #2c73d2;">
+                    ₹@FilteredBills.Sum(b => b.AmountPaid).ToString("N0")
+                </MudTd>
+
+                <MudTd Style="text-align: center; font-family: 'JetBrains Mono', monospace; font-weight: 800; color: #ffffff; font-size: 0.85rem; padding: 12px; background: #2c73d2;">
+                    ₹@FilteredBills.Sum(b => b.BalanceDue).ToString("N0")
+                </MudTd>
             </FooterContent>
         </MudTable>
     </MudPaper>
@@ -202,10 +218,34 @@
                              <MudText Typo="Typo.caption">Subtotal Ledger</MudText>
                              <MudText Typo="Typo.caption" Style="font-weight: 700;">₹ @ViewingBill.SubTotal.ToString("N2")</MudText>
                          </div>
-                         <div style="display:flex; justify-content:space-between;">
-                             <MudText Typo="Typo.caption">Tax Coordinates (18%)</MudText>
-                             <MudText Typo="Typo.caption" Style="font-weight: 700;">₹ @((ViewingBill.CGSTAmount + ViewingBill.SGSTAmount).ToString("N2"))</MudText>
-                         </div>
+                         @if (ViewingBill.CGSTAmount > 0 || ViewingBill.SGSTAmount > 0)
+                         {
+                             <div style="display:flex; justify-content:space-between;">
+                                 <MudText Typo="Typo.caption">Tax Coordinates (18%)</MudText>
+                                 <MudText Typo="Typo.caption" Style="font-weight: 700;">₹ @((ViewingBill.CGSTAmount + ViewingBill.SGSTAmount).ToString("N2"))</MudText>
+                             </div>
+                         }
+                         @if (ViewingBill.BhadaAmount > 0)
+                         {
+                             <div style="display:flex; justify-content:space-between;">
+                                 <MudText Typo="Typo.caption">Logistics (Bhada)</MudText>
+                                 <MudText Typo="Typo.caption" Style="font-weight: 700;">₹ @ViewingBill.BhadaAmount.ToString("N2")</MudText>
+                             </div>
+                         }
+                         @if (ViewingBill.LabourAmount > 0)
+                         {
+                             <div style="display:flex; justify-content:space-between;">
+                                 <MudText Typo="Typo.caption">Operational Labour</MudText>
+                                 <MudText Typo="Typo.caption" Style="font-weight: 700;">₹ @ViewingBill.LabourAmount.ToString("N2")</MudText>
+                             </div>
+                         }
+                         @if (ViewingBill.RoundingAdjustment != 0)
+                         {
+                             <div style="display:flex; justify-content:space-between;">
+                                 <MudText Typo="Typo.caption">Rounding Adjustment</MudText>
+                                 <MudText Typo="Typo.caption" Style="font-weight: 700;">₹ @ViewingBill.RoundingAdjustment.ToString("N2")</MudText>
+                             </div>
+                         }
                          <div style="display:flex; justify-content:space-between; margin-top: 8px; padding-top: 8px; border-top: 2px solid var(--mud-palette-primary);">
                              <MudText Typo="Typo.h6" Style="font-weight: 900;">GRAND TOTAL</MudText>
                              <MudText Typo="Typo.h6" Style="font-weight: 900; color: var(--mud-palette-primary);">₹ @ViewingBill.GrandTotal.ToString("N0")</MudText>
@@ -381,32 +421,98 @@
         }
     }
 
-    private Color GetRandomColor(string input)
+    private MudBlazor.Color GetRandomColor(string input)
     {
         int hash = input.GetHashCode();
-        var values = Enum.GetValues(typeof(Color));
-        return (Color)values.GetValue(Math.Abs(hash) % 5 + 1)!;
+        var values = Enum.GetValues(typeof(MudBlazor.Color));
+        return (MudBlazor.Color)values.GetValue(Math.Abs(hash) % 5 + 1)!;
     }
 
     private async Task DownloadLedger()
     {
         try {
-            Snackbar.Add("Synthesizing fiscal ledger for export...", Severity.Info);
-            var sb = new System.Text.StringBuilder();
-            sb.AppendLine("BillNumber,ShopName,CustomerName,Date,TotalWeight,GrandTotal,CashPaid,AmountPaid,BalanceDue");
+            Snackbar.Add("Synthesizing high-fidelity Excel ledger...", Severity.Info);
             
+            ExcelPackage.License.SetNonCommercialOrganization("Vikash Ironix");
+            using var package = new ExcelPackage();
+            var sheet = package.Workbook.Worksheets.Add("Daily Revenue Audit");
+            
+            // Define Column Headers
+            string[] headers = { "BillNumber", "ShopName", "CustomerName", "Date", "TotalWeight", "GrandTotal", "CashPaid", "AmountPaid", "BalanceDue" };
+            
+            // Header Styling
+            var headerRange = sheet.Cells[1, 1, 1, headers.Length];
+            headerRange.Style.Font.Bold = true;
+            headerRange.Style.Font.Color.SetColor(System.Drawing.Color.White);
+            headerRange.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
+            headerRange.Style.Fill.BackgroundColor.SetColor(System.Drawing.ColorTranslator.FromHtml("#2c73d2")); // Professional Blue from image
+            headerRange.Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+            headerRange.Style.VerticalAlignment = OfficeOpenXml.Style.ExcelVerticalAlignment.Center;
+
+            for (int i = 0; i < headers.Length; i++)
+            {
+                sheet.Cells[1, i + 1].Value = headers[i];
+            }
+
+            // Data Population
+            int row = 2;
             foreach (var b in FilteredBills)
             {
-                sb.AppendLine($"{b.BillNumber},{b.ShopName},{b.CustomerName},{b.BillDate:yyyy-MM-dd},{b.TotalWeightKg},{b.GrandTotal},{b.CashPaid},{b.AmountPaid},{b.BalanceDue}");
+                sheet.Cells[row, 1].Value = b.BillNumber;
+                sheet.Cells[row, 2].Value = b.ShopName;
+                sheet.Cells[row, 3].Value = b.CustomerName;
+                sheet.Cells[row, 4].Value = b.BillDate;
+                sheet.Cells[row, 4].Style.Numberformat.Format = "m/d/yyyy";
+                sheet.Cells[row, 5].Value = (double)b.TotalWeightKg;
+                sheet.Cells[row, 6].Value = (double)b.GrandTotal;
+                sheet.Cells[row, 7].Value = (double)b.CashPaid;
+                sheet.Cells[row, 8].Value = (double)b.AmountPaid;
+                sheet.Cells[row, 9].Value = (double)b.BalanceDue;
+
+                // Striping
+                if (row % 2 == 0)
+                {
+                    sheet.Cells[row, 1, row, headers.Length].Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
+                    sheet.Cells[row, 1, row, headers.Length].Style.Fill.BackgroundColor.SetColor(System.Drawing.ColorTranslator.FromHtml("#ebf3ff")); // Light Blue Stripe
+                }
+
+                row++;
             }
+
+            // Number Formatting
+            sheet.Cells[2, 5, row - 1, 9].Style.Numberformat.Format = "#,##0.00";
+
+            // Footer / Totalling
+            int lastDataRow = row - 1;
+            sheet.Cells[row, 5].Formula = $"SUM(E2:E{lastDataRow})";
+            sheet.Cells[row, 6].Formula = $"SUM(F2:F{lastDataRow})";
+            sheet.Cells[row, 7].Formula = $"SUM(G2:G{lastDataRow})";
+            sheet.Cells[row, 8].Formula = $"SUM(H2:H{lastDataRow})";
+            sheet.Cells[row, 9].Formula = $"SUM(I2:I{lastDataRow})";
             
-            var filename = $"IronLedger_Audit_{SelectedDate?.ToString("yyyyMMdd") ?? "All"}.csv";
-            await JS.InvokeVoidAsync("downloadFile", filename, sb.ToString());
-            Snackbar.Add("Export payload generated and dispatched.", Severity.Success);
+            var footerRange = sheet.Cells[row, 5, row, 9];
+            footerRange.Style.Font.Bold = true;
+            footerRange.Style.Numberformat.Format = "#,##0.00";
+            
+            // Auto-fit Columns
+            sheet.Cells.AutoFitColumns();
+
+            // Add Excel Table for filter icons and cleaner formatting
+            var tableRange = sheet.Cells[1, 1, row - 1, headers.Length];
+            var table = sheet.Tables.Add(tableRange, "RevenueTable");
+            table.TableStyle = OfficeOpenXml.Table.TableStyles.Medium2; // Blue theme
+            
+            var bytes = await package.GetAsByteArrayAsync();
+            var base64 = Convert.ToBase64String(bytes);
+            
+            var filename = $"IronLedger_Audit_{SelectedDate?.ToString("yyyyMMdd") ?? "All"}.xlsx";
+            await JS.InvokeVoidAsync("saveAsFile", filename, base64);
+            
+            Snackbar.Add("Professional Audit Ledger dispatched successfully.", Severity.Success);
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Export failed: {ex.Message}", Severity.Error);
+            Snackbar.Add($"Export optimization failed: {ex.Message}", Severity.Error);
         }
     }
 
@@ -420,29 +526,50 @@
     {
         var sb = new System.Text.StringBuilder();
         sb.Append("<!DOCTYPE html><html><head><style>");
-        sb.Append("body{font-family:'Inter','Segoe UI',sans-serif;padding:40px;}");
-        sb.Append(".header{display:flex;justify-content:space-between;border-bottom:3px solid #000;padding-bottom:15px;margin-bottom:30px;}");
-        sb.Append("table{width:100%;border-collapse:collapse;}");
-        sb.Append("th{background:#f1f5f9;text-align:left;padding:12px 8px;font-size:10px;text-transform:uppercase;border-bottom:1px solid #000;}");
-        sb.Append("td{padding:10px 8px;border-bottom:1px solid #e2e8f0;font-size:12px;}");
-        sb.Append(".totals-row{font-weight:900;background:#f8fafc;}");
+        sb.Append("body{font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding:20px; color:#333;}");
+        sb.Append(".header-table{width:100%; border-collapse:collapse; margin-bottom:20px;}");
+        sb.Append(".report-title{font-size:24px; font-weight:bold; color:#2c73d2; border-bottom:2px solid #2c73d2; padding-bottom:10px; margin-bottom:20px;}");
+        sb.Append("table{width:100%; border-collapse:collapse; font-size:12px;}");
+        sb.Append("th{background-color:#2c73d2; color:white; padding:10px; border:1px solid #1e5bb0; text-align:left; text-transform:uppercase;}");
+        sb.Append("td{padding:8px; border:1px solid #dee2e6;}");
+        sb.Append("tr:nth-child(even){background-color:#ebf3ff;}");
+        sb.Append(".totals-row{font-weight:bold; background-color:#d0e1f9 !important;}");
+        sb.Append(".text-right{text-align:right;}");
         sb.Append("</style></head><body>");
-        sb.Append("<div class='header'><div><h1>Daily Revenue Report</h1><p>FISCAL NODE: " + SelectedDate?.ToString("dd MMM yyyy") + "</p></div><div style='text-align:right'><h3>Vikash Iron & Steel</h3></div></div>");
-        sb.Append("<table><thead><tr><th>Entity Name</th><th>Case (Weight)</th><th>Total (₹)</th><th>Cash (₹)</th><th>A/C (₹)</th><th>Due (₹)</th></tr></thead><tbody>");
+        sb.Append("<div class='report-title'>Daily Revenue Audit Report - Vikash Iron & Steel</div>");
+        sb.Append("<p><strong>Audit Date:</strong> " + (SelectedDate?.ToString("dd MMMM yyyy") ?? "All Time") + "</p>");
+        
+        sb.Append("<table><thead><tr>");
+        sb.Append("<th>Bill Number</th><th>Shop Name</th><th>Customer Name</th><th>Date</th><th>Weight (KG)</th><th>Grand Total</th><th>Cash Paid</th><th>Amount Paid</th><th>Balance Due</th>");
+        sb.Append("</tr></thead><tbody>");
         
         foreach (var b in FilteredBills)
         {
-            sb.Append($"<tr><td>{b.ShopName}</td><td>{b.TotalWeightKg:N0}</td><td>{b.GrandTotal:N0}</td><td>{b.CashPaid:N0}</td><td>{b.AmountPaid:N0}</td><td>{b.BalanceDue:N0}</td></tr>");
+            sb.Append("<tr>");
+            sb.Append($"<td>{b.BillNumber}</td>");
+            sb.Append($"<td>{b.ShopName}</td>");
+            sb.Append($"<td>{b.CustomerName}</td>");
+            sb.Append($"<td>{b.BillDate:dd/MM/yyyy}</td>");
+            sb.Append($"<td class='text-right'>{b.TotalWeightKg:N2}</td>");
+            sb.Append($"<td class='text-right'>₹{b.GrandTotal:N0}</td>");
+            sb.Append($"<td class='text-right'>₹{b.CashPaid:N0}</td>");
+            sb.Append($"<td class='text-right'>₹{b.AmountPaid:N0}</td>");
+            sb.Append($"<td class='text-right'>₹{b.BalanceDue:N0}</td>");
+            sb.Append("</tr>");
         }
         
-        sb.Append("<tr class='totals-row'><td>GRAND TOTAL (कुल)</td>");
-        sb.Append($"<td>{FilteredBills.Sum(b => b.TotalWeightKg):N0}</td>");
-        sb.Append($"<td>{FilteredBills.Sum(b => b.GrandTotal):N0}</td>");
-        sb.Append($"<td>{FilteredBills.Sum(b => b.CashPaid):N0}</td>");
-        sb.Append($"<td>{FilteredBills.Sum(b => b.AmountPaid):N0}</td>");
-        sb.Append($"<td>{FilteredBills.Sum(b => b.BalanceDue):N0}</td></tr>");
+        sb.Append("<tr class='totals-row'>");
+        sb.Append("<td colspan='4'>GRAND TOTAL (कुल योग)</td>");
+        sb.Append($"<td class='text-right'>{FilteredBills.Sum(b => b.TotalWeightKg):N2}</td>");
+        sb.Append($"<td class='text-right'>₹{FilteredBills.Sum(b => b.GrandTotal):N0}</td>");
+        sb.Append($"<td class='text-right'>₹{FilteredBills.Sum(b => b.CashPaid):N0}</td>");
+        sb.Append($"<td class='text-right'>₹{FilteredBills.Sum(b => b.AmountPaid):N0}</td>");
+        sb.Append($"<td class='text-right'>₹{FilteredBills.Sum(b => b.BalanceDue):N0}</td>");
+        sb.Append("</tr>");
         
-        sb.Append("</tbody></table></body></html>");
+        sb.Append("</tbody></table>");
+        sb.Append("<div style='margin-top:20px; font-size:10px; color:#777;'>Generated on: " + DateTime.Now.ToString("dd/MM/yyyy HH:mm") + "</div>");
+        sb.Append("</body></html>");
         return sb.ToString();
     }
 
