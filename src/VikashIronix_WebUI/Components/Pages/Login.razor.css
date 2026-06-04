@@ -1,9 +1,10 @@
 .login-container {
     display: flex;
-    min-height: 100vh;
+    height: 100vh;
     width: 100%;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
     background-color: #ffffff;
+    overflow: hidden;
 }
 
 /* Left Panel (Feature Showcase) */
@@ -362,6 +363,12 @@
 
 /* Responsive adjustments */
 @media (max-width: 992px) {
+    .login-container {
+        height: auto;
+        min-height: 100vh;
+        overflow: auto;
+    }
+
     .left-panel {
         display: none;
     }
