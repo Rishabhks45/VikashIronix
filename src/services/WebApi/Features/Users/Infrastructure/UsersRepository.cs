@@ -11,9 +11,11 @@ public class UsersRepository
     private readonly DbHelper _dbHelper;
     public EncryptionService EncryptionService { get; }
     public EncryptionSettings EncryptionSettings { get; }
-    public UsersRepository(DbHelper dbHelper)
+    public UsersRepository(DbHelper dbHelper, EncryptionService encryptionService, EncryptionSettings encryptionSettings)
     {
         _dbHelper = dbHelper;
+        EncryptionService = encryptionService;
+        EncryptionSettings = encryptionSettings;
     }
 
     public async Task<List<UserDto>> GetUsersAsync(CancellationToken token)

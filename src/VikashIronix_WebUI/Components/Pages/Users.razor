@@ -2,8 +2,10 @@
 @using SharedKernel.DTOs.Users
 @using VikashIronix_WebUI.Services.Users
 @using VikashIronix_WebUI.Components.Shared
+@using FluentValidation
 @inject IUserService UserService
 @inject IDialogService DialogService
+@inject ISnackbar Snackbar
 @rendermode InteractiveServer
 
 <PageTitle>User & Staff Management - The Iron Ledger</PageTitle>
@@ -15,12 +17,12 @@
         <MudText Typo="Typo.h6" Style="font-family: var(--mud-typography-h6-font-family); font-weight: 800;">@(_isNewUser ? "Add New User" : "Edit User")</MudText>
     </MudDrawerHeader>
     <div class="pa-6">
-        <MudForm @ref="_form" @bind-IsValid="@_success">
+        <MudForm Model="@_editingUser" @ref="_form" @bind-IsValid="@_success" Validation="@ValidateValue">
             <MudStack Spacing="4">
-                <MudTextField @bind-Value="_editingUser.FirstName" Label="First Name" Required="true" RequiredError="First Name is required" Variant="Variant.Outlined" Margin="Margin.Dense" />
-                <MudTextField @bind-Value="_editingUser.LastName" Label="Last Name" Required="true" RequiredError="Last Name is required" Variant="Variant.Outlined" Margin="Margin.Dense" />
-                <MudTextField @bind-Value="_editingUser.Email" Label="Email Address" Required="true" RequiredError="Email is required" Variant="Variant.Outlined" Margin="Margin.Dense" />
-                <MudSelect T="int?" @bind-Value="_editingUser.RoleId" Label="Role" Required="true" RequiredError="Role is required" Variant="Variant.Outlined" Margin="Margin.Dense">
+                <MudTextField @bind-Value="_editingUser.FirstName" For="@(() => _editingUser.FirstName)" Label="First Name" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                <MudTextField @bind-Value="_editingUser.LastName" For="@(() => _editingUser.LastName)" Label="Last Name" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                <MudTextField @bind-Value="_editingUser.Email" For="@(() => _editingUser.Email)" Label="Email Address" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                <MudSelect T="int?" @bind-Value="_editingUser.RoleId" For="@(() => _editingUser.RoleId)" Label="Role" Variant="Variant.Outlined" Margin="Margin.Dense">
                     @foreach (var r in Roles)
                     {
                         <MudSelectItem T="int?" Value="@r.Id">@r.Name</MudSelectItem>
@@ -29,7 +31,7 @@
                 <MudSwitch @bind-Value="_editingUser.IsActive" Label="Is Active Account" Color="Color.Success" />
                 @if (_isNewUser)
                 {
-                    <MudTextField @bind-Value="_editingUser.Password" Label="Temporary Password" Required="true" RequiredError="Password is required" Variant="Variant.Outlined" Margin="Margin.Dense" InputType="InputType.Password" />
+                    <MudTextField @bind-Value="_editingUser.Password" For="@(() => _editingUser.Password)" Label="Temporary Password" Variant="Variant.Outlined" Margin="Margin.Dense" InputType="InputType.Password" />
                 }
                 
                 <MudStack Row="true" Spacing="2" Class="mt-4">
@@ -111,6 +113,16 @@
     private MudForm _form = null!;
     private bool _success;
 
+    private readonly UserDtoValidator _userValidator = new();
+
+    private Func<object, string, Task<IEnumerable<string>>> ValidateValue => async (model, propertyName) =>
+    {
+        var result = await _userValidator.ValidateAsync(ValidationContext<UserDto>.CreateWithOptions((UserDto)model, x => x.IncludeProperties(propertyName)));
+        if (result.IsValid)
+            return Array.Empty<string>();
+        return result.Errors.Select(e => e.ErrorMessage);
+    };
+
     protected override async Task OnInitializedAsync()
     {
         Roles = await UserService.GetRolesAsync();
@@ -155,12 +167,31 @@
     private async Task SaveUser()
     {
         await _form.Validate();
-        if (_success)
+        if (_form.IsValid)
         {
-            if (_isNewUser) await UserService.CreateUserAsync(_editingUser);
-            else await UserService.UpdateUserAsync(_editingUser);
-            _drawerOpen = false;
-            await LoadUsers();
+            try
+            {
+                if (_isNewUser)
+                {
+                    await UserService.CreateUserAsync(_editingUser);
+                    Snackbar.Add("User created successfully", MudBlazor.Severity.Success);
+                }
+                else
+                {
+                    await UserService.UpdateUserAsync(_editingUser);
+                    Snackbar.Add("User updated successfully", MudBlazor.Severity.Success);
+                }
+                _drawerOpen = false;
+                await LoadUsers();
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Failed to save user: {ex.Message}", MudBlazor.Severity.Error);
+            }
+        }
+        else
+        {
+            Snackbar.Add("Please fix form errors.", MudBlazor.Severity.Warning);
         }
     }
 }

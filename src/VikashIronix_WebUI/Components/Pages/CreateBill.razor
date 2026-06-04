@@ -15,179 +15,97 @@
 @using VikashIronix_WebUI.Services.Users
 @inject IUserService UserService
 
-<PageTitle>Create Invoice - Vikash Iron Invoicing</PageTitle>
-
 <PageTitle>Create Invoice - Vikash Iron Management</PageTitle>
-
-<style>
-    .billing-root { 
-        padding: 20px; 
-        background: var(--mud-palette-background-grey);
-        min-height: 100vh;
-        font-family: 'Inter', sans-serif;
-    }
-    .main-canvas { 
-        max-width: 1440px; 
-        margin: 0 auto; 
-    }
-    
-    .terra-card { 
-        background: var(--mud-palette-surface); 
-        border-radius: 16px; 
-        box-shadow: 0 2px 15px rgba(0,0,0,0.02); 
-        border: 1px solid var(--mud-palette-divider);
-        padding: 20px;
-        height: 100%;
-        overflow: hidden;
-    }
-    
-    .section-headline { 
-        font-size: 0.6rem; 
-        font-weight: 800; 
-        color: var(--mud-palette-text-secondary); 
-        letter-spacing: 0.12em; 
-        text-transform: uppercase; 
-        margin-bottom: 12px; 
-        display: block; 
-    }
-
-    .valuation-label { 
-        font-size: 0.65rem; 
-        font-weight: 800; 
-        color: var(--mud-palette-text-secondary); 
-        letter-spacing: 0.05em; 
-        text-transform: uppercase;
-        line-height: 1.1;
-    }
-
-    .valuation-amount { 
-        font-family: 'Literata', serif; 
-        font-weight: 900; 
-        font-size: clamp(2rem, 4vw, 3.2rem); 
-        color: var(--mud-palette-primary); 
-        letter-spacing: -0.05em; 
-        line-height: 1;
-        margin-top: 4px;
-        word-break: break-all;
-    }
-
-    .audit-summary-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 8px 0;
-        border-bottom: 1px dashed var(--mud-palette-divider);
-    }
-    .audit-summary-label { color: var(--mud-palette-text-secondary); font-weight: 500; font-size: 0.95rem; }
-    .audit-summary-value { color: var(--mud-palette-text-primary); font-weight: 700; font-family: monospace; font-size: 0.95rem; }
-
-    .material-row {
-        transition: all 0.2s ease;
-        border-bottom: 1px solid var(--mud-palette-divider);
-    }
-    .material-row:hover { background: var(--mud-palette-action-default-hover); }
-
-    .sticky-audit-node {
-        position: sticky;
-        top: 12px;
-    }
-
-    .btn-terra-primary {
-        background: var(--mud-palette-primary) !important;
-        color: var(--mud-palette-primary-text) !important;
-        border-radius: 8px !important;
-        padding: 8px 24px !important;
-        font-weight: 800 !important;
-        text-transform: none !important;
-    }
-    .btn-terra-ghost {
-        color: var(--mud-palette-primary) !important;
-        border-radius: 8px !important;
-        font-weight: 700 !important;
-        text-transform: none !important;
-    }
-    
-    .invoice-preview-card {
-        background: white; 
-        color: #1e293b; 
-        border-radius: 8px; 
-        overflow: hidden; 
-        position: relative; 
-        border: 2px solid var(--mud-palette-primary); 
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-    }
-</style>
 
 <div class="billing-root">
     <div class="main-canvas">
         <MudGrid Spacing="4">
             <!-- Left Side: Transaction Inputs -->
             <MudItem xs="12" lg="8">
-                <header class="mb-4" style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 12px;">
+                <header class="billing-header mb-4">
                     <div>
-                        <MudText Typo="Typo.h5" Style="font-family: 'Literata', serif; font-weight: 900; letter-spacing: -0.02em;" Color="Color.Default">Transaction Audit</MudText>
-                        <MudText Typo="Typo.caption" Color="Color.Secondary">Synchronized fiscal auditing & warehouse allocation.</MudText>
+                        <MudText Typo="Typo.h5" Class="page-title">Transaction Audit</MudText>
+                        <MudText Typo="Typo.caption" Class="page-subtitle">Synchronized fiscal auditing & warehouse allocation.</MudText>
                     </div>
-                    <div style="display: flex; gap: 8px;">
+                    <div class="header-actions">
                         @if (ActiveBillId != null)
                         {
                             <MudChip T="string" Color="Color.Info" Variant="Variant.Filled" Size="Size.Small" OnClose="StartNewTransaction">EDITING DRAFT: @GeneratedBillNumber</MudChip>
                         }
-                        <MudButton StartIcon="@Icons.Material.Filled.Storefront" Variant="@(IsRetailMode ? Variant.Filled : Variant.Outlined)" Color="Color.Warning" OnClick="ToggleRetailMode" Size="Size.Small" Class="mr-2">@(IsRetailMode ? "Khudra Mode: ACTIVE" : "Retail Sale (Khudra)")</MudButton>
-                        <MudButton StartIcon="@Icons.Material.Filled.Add" Variant="Variant.Outlined" Color="Color.Primary" OnClick="StartNewTransaction" Size="Size.Small">New Transaction</MudButton>
+                        <button class="header-btn-khudra @(IsRetailMode ? "active" : "")" @onclick="ToggleRetailMode">
+                            <MudIcon Icon="@Icons.Material.Filled.Storefront" Class="header-btn-icon" />
+                            <span>@(IsRetailMode ? "Khudra Mode: ACTIVE" : "Retail Sale (Khudra)")</span>
+                        </button>
+                        <button class="header-btn-new" @onclick="StartNewTransaction">
+                            <MudIcon Icon="@Icons.Material.Filled.Add" Class="header-btn-icon" />
+                            <span>New Transaction</span>
+                        </button>
                     </div>
                 </header>
 
-                <MudStack Spacing="3">
+                <MudStack Spacing="4">
                     <!-- Entity Informatics -->
                     <div class="terra-card">
-                        <span class="section-headline">Entity Informatics</span>
-                        <MudGrid Spacing="2">
+                        <MudGrid Spacing="3" Class="align-center">
                             @if (!IsRetailMode)
                             {
-                                <MudItem xs="12" md="6">
+                                <MudItem xs="12" md="8">
+                                    <span class="section-headline">ENTITY / SHOP</span>
                                     <MudAutocomplete T="CustomerDto"
-                                                    Label="Registered Entity / Shop Name"
-                                                    Value="SelectedCustomer"
-                                                    ValueChanged="OnCustomerSelected"
-                                                    SearchFunc="SearchCustomers"
-                                                    ToStringFunc="@(c => c?.ShopName ?? "")"
-                                                    Variant="Variant.Filled"
-                                                    Underline="false"
-                                                    Dense="true"
-                                                    AdornmentIcon="@Icons.Material.Filled.Search"
-                                                    Style="background: var(--mud-palette-background-grey); border-radius: 8px;"
-                                                    Placeholder="Type entity or shop name..." />
+                                                     Value="SelectedCustomer"
+                                                     ValueChanged="OnCustomerSelected"
+                                                     SearchFunc="SearchCustomers"
+                                                     ToStringFunc="@(c => c?.ShopName ?? "")"
+                                                     Variant="Variant.Outlined"
+                                                     Placeholder="Type entity or shop name..."
+                                                     AdornmentIcon="@Icons.Material.Filled.Search"
+                                                     AdornmentColor="Color.Secondary"
+                                                     Class="input-field-h48" />
                                 </MudItem>
                             }
                             else
                             {
-                                <MudItem xs="12" md="4">
-                                    <MudTextField Label="Retail Shop Name (नकद दुकान)" @bind-Value="RetailShopName" Variant="Variant.Filled" Underline="false" Dense="true" Style="background: rgba(255,152,0,0.05); border-radius: 8px;" Placeholder="e.g. KHUDRA SALE..." />
+                                <MudItem xs="12" md="3">
+                                    <span class="section-headline">RETAIL SHOP NAME</span>
+                                    <MudTextField @bind-Value="RetailShopName" Variant="Variant.Outlined" Placeholder="e.g. KHUDRA SALE" Class="input-field-h48" />
                                 </MudItem>
-                                <MudItem xs="12" md="4">
-                                    <MudTextField Label="Customer Name (नाम)" @bind-Value="RetailCustomerName" Variant="Variant.Filled" Underline="false" Dense="true" Style="background: rgba(255,152,0,0.05); border-radius: 8px;" />
+                                <MudItem xs="12" md="3">
+                                    <span class="section-headline">CUSTOMER NAME</span>
+                                    <MudTextField @bind-Value="RetailCustomerName" Variant="Variant.Outlined" Placeholder="Customer Name" Class="input-field-h48" />
                                 </MudItem>
-                                <MudItem xs="12" md="4">
-                                    <MudTextField Label="Phone (मोबाइल)" @bind-Value="RetailPhone" Variant="Variant.Filled" Underline="false" Dense="true" Style="background: rgba(255,152,0,0.05); border-radius: 8px;" />
+                                <MudItem xs="12" md="2">
+                                    <span class="section-headline">PHONE</span>
+                                    <MudTextField @bind-Value="RetailPhone" Variant="Variant.Outlined" Placeholder="Mobile" Class="input-field-h48" />
                                 </MudItem>
                             }
                             
-                            <MudItem xs="6" md="3">
-                                <MudDatePicker Label="Fiscal Audit Date" @bind-Date="BillDate" Variant="Variant.Filled" Underline="false" Dense="true" Style="background: var(--mud-palette-background-grey); border-radius: 8px;" />
+                            <MudItem xs="12" md="4">
+                                <span class="section-headline">FISCAL AUDIT DATE</span>
+                                <div class="date-picker-card">
+                                    <div class="calendar-icon-box">
+                                        <MudIcon Icon="@Icons.Material.Filled.CalendarMonth" Class="calendar-icon" />
+                                    </div>
+                                    <div class="date-picker-details">
+                                        <MudDatePicker @bind-Date="BillDate" 
+                                                       Variant="Variant.Text" 
+                                                       DisableUnderLine="true" 
+                                                       Class="date-picker-input"
+                                                       DateFormat="dd MMM yyyy" />
+                                        <span class="date-day-label">@BillDate?.ToString("dddd")</span>
+                                    </div>
+                                </div>
                             </MudItem>
-                            <MudItem xs="6" md="3" />
                             
                             @if (SelectedCustomer != null && !IsRetailMode)
                             {
                                 <MudItem xs="12">
-                                    <div style="background: var(--mud-palette-background-grey); border: 1px solid var(--mud-palette-divider); padding: 12px; border-radius: 8px; display: flex; align-items: center; gap: 12px;">
-                                        <div style="width: 32px; height: 32px; background: var(--mud-palette-primary); border-radius: 6px; display: flex; align-items: center; justify-content: center; color: var(--mud-palette-primary-text); font-weight: 900; font-size: 0.9rem;">
+                                    <div class="selected-customer-card">
+                                        <div class="customer-avatar-badge">
                                             @SelectedCustomer.ShopName.Substring(0, 1)
                                         </div>
                                         <div>
-                                            <MudText Typo="Typo.body2" Style="font-weight: 900;">@SelectedCustomer.ShopName</MudText>
-                                            <MudText Typo="Typo.caption" Color="Color.Secondary">Contact: @SelectedCustomer.CustomerName · @SelectedCustomer.PhoneNumber</MudText>
+                                            <MudText Typo="Typo.body2" Class="customer-shop-name">@SelectedCustomer.ShopName</MudText>
+                                            <MudText Typo="Typo.caption" Class="customer-contact-info">Contact: @SelectedCustomer.CustomerName · @SelectedCustomer.PhoneNumber</MudText>
                                         </div>
                                     </div>
                                 </MudItem>
@@ -196,28 +114,28 @@
                     </div>
 
                     <!-- Line Items -->
-                    <div class="terra-card" style="padding: 0;">
-                        <div style="padding: 16px 20px; border-bottom: 2px solid var(--mud-palette-divider); display: flex; justify-content: space-between; align-items: center;">
-                            <span class="section-headline" style="margin-bottom: 0;">Trade Ledger Snapshot</span>
-                            <MudSwitch @bind-Value="IncludeGST" Color="Color.Primary" Label="GST Audit" Style="font-weight: 700; font-size: 0.6rem;" />
+                    <div class="terra-card p-0">
+                        <div class="trade-ledger-header">
+                            <span class="section-headline mb-0-headline">TRADE LEDGER SNAPSHOT</span>
+                            <MudSwitch @bind-Value="IncludeGST" Color="Color.Primary" Label="GST Audit" Class="gst-switch" />
                         </div>
                         
-                        <div style="padding: 12px 20px;">
-                            <table style="width: 100%; border-collapse: collapse;">
+                        <div class="trade-ledger-body">
+                            <table class="audit-table">
                                 <thead>
-                                    <tr style="text-align: left; border-bottom: 1px solid var(--mud-palette-divider);">
-                                        <th style="padding: 12px 10px; font-size: 0.6rem; font-weight: 900; color: var(--mud-palette-text-secondary); text-transform: uppercase;">Resource Description</th>
-                                        <th style="padding: 12px 10px; font-size: 0.6rem; font-weight: 900; color: var(--mud-palette-text-secondary); text-transform: uppercase; width: 100px;">Weight</th>
-                                        <th style="padding: 12px 10px; font-size: 0.6rem; font-weight: 900; color: var(--mud-palette-text-secondary); text-transform: uppercase; width: 100px;">Rate</th>
-                                        <th style="padding: 12px 10px; font-size: 0.6rem; font-weight: 900; color: var(--mud-palette-text-secondary); text-transform: uppercase; text-align: right; width: 120px;">Total</th>
-                                        <th style="padding: 12px 10px; width: 40px;"></th>
+                                    <tr>
+                                        <th class="col-desc">Resource Description</th>
+                                        <th class="col-weight">Weight</th>
+                                        <th class="col-rate">Rate</th>
+                                        <th class="col-total">Total</th>
+                                        <th class="col-actions"></th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @foreach (var row in BillRows)
                                     {
                                         <tr class="material-row">
-                                            <td style="padding: 4px 10px;">
+                                            <td>
                                                 <MudAutocomplete T="MaterialDto"
                                                                  Value="row.SelectedMaterial"
                                                                  ValueChanged="@(m => OnMaterialSelected(row, m))"
@@ -227,24 +145,24 @@
                                                                  Placeholder="Start typing resource..."
                                                                  Dense="true" />
                                             </td>
-                                            <td style="padding: 4px 10px;">
+                                            <td>
                                                 <MudNumericField T="decimal" 
                                                                 Value="row.Quantity" 
                                                                 ValueChanged="@(v => { row.Quantity = v; RecalcRow(row); })" 
                                                                 Variant="Variant.Text" 
                                                                 HideSpinButtons="true" 
-                                                                Style="@(row.SelectedMaterial != null && row.Quantity > row.SelectedMaterial.StockMT ? "font-weight: 900; color: var(--mud-palette-error);" : "font-weight: 700;")" 
+                                                                Class="@(row.SelectedMaterial != null && row.Quantity > row.SelectedMaterial.StockMT ? "audit-quantity-error" : "audit-quantity-normal")" 
                                                                 Error="@(row.SelectedMaterial != null && row.Quantity > row.SelectedMaterial.StockMT)"
                                                                 ErrorText="Exceeds stock"
-                                                                Dense="true" />
+                                                                Margin="Margin.Dense" />
                                             </td>
-                                            <td style="padding: 4px 10px;">
-                                                <MudNumericField T="decimal" Value="row.UnitPrice" ValueChanged="@(v => { row.UnitPrice = v; RecalcRow(row); })" Variant="Variant.Text" HideSpinButtons="true" Style="font-weight: 700;" Dense="true" />
+                                            <td>
+                                                <MudNumericField T="decimal" Value="row.UnitPrice" ValueChanged="@(v => { row.UnitPrice = v; RecalcRow(row); })" Variant="Variant.Text" HideSpinButtons="true" Class="audit-unit-price" Margin="Margin.Dense" />
                                             </td>
-                                            <td style="padding: 4px 10px; text-align: right;">
-                                                <MudText Typo="Typo.body2" Style="font-weight: 700; font-family: monospace;">₹ @row.TotalPrice.ToString("N0")</MudText>
+                                            <td class="text-right">
+                                                <span class="audit-row-total">₹ @row.TotalPrice.ToString("N0")</span>
                                             </td>
-                                            <td style="padding: 4px 10px;">
+                                            <td class="text-center">
                                                 <MudIconButton Icon="@Icons.Material.Filled.DeleteOutline" Color="Color.Error" Size="Size.Small" OnClick="() => RemoveRow(row)" />
                                             </td>
                                         </tr>
@@ -252,31 +170,43 @@
                                 </tbody>
                             </table>
 
-                            <div style="padding: 12px; text-align: center;">
-                                <MudButton StartIcon="@Icons.Material.Filled.Add" Color="Color.Primary" Variant="Variant.Text" OnClick="AddRow" Style="font-weight: 700; text-transform: none; font-size: 0.75rem;">Insert Audit Line</MudButton>
+                            <div class="insert-line-container" @onclick="AddRow">
+                                <MudIcon Icon="@Icons.Material.Filled.Add" Class="insert-line-icon" />
+                                <span>Insert Audit Line</span>
                             </div>
                         </div>
                     </div>
 
                     <!-- Supplemental Modals -->
                     <div class="terra-card">
-                        <span class="section-headline" style="margin-bottom: 8px;">Operational Logistics</span>
-                        <MudGrid Spacing="2">
+                        <span class="section-headline">OPERATIONAL LOGISTICS</span>
+                        <MudGrid Spacing="3">
                             <MudItem xs="12" md="6">
-                                <MudTextField Label="Bhada Amount" @bind-Value="BhadaAmount" Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.LocalShipping" AdornmentColor="Color.Primary" Margin="Margin.Dense" />
+                                <span class="section-headline sub-headline">BHADA AMOUNT</span>
+                                <MudTextField @bind-Value="BhadaAmount" Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.LocalShipping" AdornmentColor="Color.Primary" Margin="Margin.Dense" />
                             </MudItem>
                             <MudItem xs="12" md="6">
-                                <MudTextField Label="GSTIN / Remarks" @bind-Value="GstinValue" Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Notes" Margin="Margin.Dense" />
+                                <span class="section-headline sub-headline">GSTIN / REMARKS</span>
+                                <MudTextField @bind-Value="GstinValue" Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Notes" AdornmentColor="Color.Secondary" Margin="Margin.Dense" />
                             </MudItem>
                         </MudGrid>
                     </div>
 
-                    <div style="display: flex; gap: 12px; margin-top: 8px;">
-                        <MudButton Variant="Variant.Filled" OnClick="GenerateInvoice" Disabled="IsSaving" Class="btn-terra-primary" StartIcon="@Icons.Material.Filled.DatasetLinked">Commit Final Audit</MudButton>
-                        <MudButton Variant="Variant.Text" OnClick="SaveAsDraft" Disabled="IsSaving" Class="btn-terra-ghost">Archive Draft</MudButton>
+                    <div class="footer-actions">
+                        <button class="footer-btn-commit" @onclick="GenerateInvoice" disabled="@IsSaving">
+                            <MudIcon Icon="@Icons.Material.Filled.CloudUpload" Class="footer-btn-icon" />
+                            <span>Commit Final Audit</span>
+                        </button>
+                        <button class="footer-btn-archive" @onclick="SaveAsDraft" disabled="@IsSaving">
+                            <MudIcon Icon="@Icons.Material.Filled.FolderOpen" Class="footer-btn-icon" />
+                            <span>Archive Draft</span>
+                        </button>
                         @if (!string.IsNullOrEmpty(GeneratedBillNumber))
                         {
-                            <MudButton Variant="Variant.Filled" Color="Color.Info" OnClick="DownloadBill" StartIcon="@Icons.Material.Filled.DownloadDone" Style="border-radius: 8px; font-weight: 800; padding: 8px 20px;">Download Documentation</MudButton>
+                            <button class="footer-btn-download" @onclick="DownloadBill">
+                                <MudIcon Icon="@Icons.Material.Filled.DownloadDone" Class="footer-btn-icon" />
+                                <span>Download Documentation</span>
+                            </button>
                         }
                     </div>
                 </MudStack>
@@ -286,7 +216,7 @@
             <MudItem xs="12" lg="4">
                 <div class="sticky-audit-node">
                     <div class="terra-card">
-                        <span class="section-headline">Audit Summary</span>
+                        <span class="section-headline">AUDIT SUMMARY</span>
                         
                         <div class="audit-summary-item">
                             <span class="audit-summary-label">Aggregate Base</span>
@@ -306,160 +236,177 @@
                             </div>
                         }
 
-                        <hr style="margin: 16px 0; border: none; border-top: 1px dashed var(--mud-palette-divider);" />
+                        <div class="divider-dashed"></div>
 
-                        <div style="display: flex; gap: 20px; align-items: center;">
-                            <div class="valuation-label" style="writing-mode: vertical-rl; transform: rotate(180deg); display: flex; align-items: center; justify-content: center;">
-                                FINAL<br/>VALUATION
+                        <span class="section-headline mb-4-px">FINAL VALUATION</span>
+                        <div class="final-valuation-container">
+                            <div class="valuation-number-box">
+                                <span class="currency-symbol">₹</span>
+                                <span class="valuation-amount">@Math.Round(GrandTotal).ToString("N0")</span>
                             </div>
-                            <div style="flex-grow: 1; overflow: hidden;">
-                                <div style="display: flex; align-items: flex-start; gap: 6px;">
-                                    <span style="font-family: 'Literata', serif; font-size: 1.8rem; color: var(--mud-palette-primary); font-weight: 900; line-height: 1;">₹</span>
-                                    <div class="valuation-amount">@Math.Round(GrandTotal).ToString("N0")</div>
+                            <MudIcon Icon="@Icons.Material.Filled.BarChart" Class="valuation-chart-icon" />
+                        </div>
+                    </div>
+
+                    <!-- Real-time Payment Realization -->
+                    <div class="terra-card">
+                        <span class="section-headline">COLLECTION BREAKDOWN</span>
+                        
+                        <div class="payment-cards-list">
+                            <div class="payment-card">
+                                <div class="payment-card-icon-box">
+                                    <MudIcon Icon="@Icons.Material.Filled.Payments" Style="color: var(--mud-palette-primary); font-size: 1.15rem;" />
+                                </div>
+                                <div class="flex-grow-1">
+                                    <span class="payment-card-label">Cash Payment (नकद)</span>
+                                    <MudNumericField T="decimal" 
+                                                     Value="CashAmount" 
+                                                     ValueChanged="@(v => { CashAmount = v; StateHasChanged(); })"
+                                                     Variant="Variant.Text" 
+                                                     Underline="false" 
+                                                     HideSpinButtons="true" 
+                                                     Class="payment-input" />
+                                </div>
+                            </div>
+                            <div class="payment-card">
+                                <div class="payment-card-icon-box">
+                                    <MudIcon Icon="@Icons.Material.Filled.AccountBalance" Style="color: var(--mud-palette-primary); font-size: 1.15rem;" />
+                                </div>
+                                <div class="flex-grow-1">
+                                    <span class="payment-card-label">A/C Payment (बैंक)</span>
+                                    <MudNumericField T="decimal" 
+                                                     Value="AccountAmount" 
+                                                     ValueChanged="@(v => { AccountAmount = v; StateHasChanged(); })"
+                                                     Variant="Variant.Text" 
+                                                     Underline="false" 
+                                                     HideSpinButtons="true" 
+                                                     Class="payment-input" />
                                 </div>
                             </div>
                         </div>
-
-                        <!-- Real-time Payment Realization -->
-                        <div style="margin-top: 16px; background: var(--mud-palette-background-grey); padding: 16px; border-radius: 12px; border: 1px solid var(--mud-palette-divider);">
-                            <span class="section-headline" style="font-size: 0.55rem; margin-bottom: 8px;">Collection Breakdown</span>
-                            <MudGrid Spacing="2">
-                                <MudItem xs="6">
-                                    <MudNumericField T="decimal" Label="CASH PAYMENT (नकद)" @bind-Value="CashAmount" Variant="Variant.Outlined" Margin="Margin.Dense" HideSpinButtons="true" Style="font-family: monospace; font-weight: 800; color: #f59e0b;" Dense="true" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Payments" />
-                                </MudItem>
-                                <MudItem xs="6">
-                                    <MudNumericField T="decimal" Label="A/C PAYMENT (बैंक)" @bind-Value="AccountAmount" Variant="Variant.Outlined" Margin="Margin.Dense" HideSpinButtons="true" Style="font-family: monospace; font-weight: 800; color: var(--mud-palette-success);" Dense="true" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.AccountBalance" />
-                                </MudItem>
-                            </MudGrid>
-                            
-                            <div style="display: flex; gap: 8px; margin-top: 12px;">
-                                <MudButton Size="Size.Small" OnClick='() => { CashAmount = GrandTotal; AccountAmount = 0; }' Variant="Variant.Text" Color="Color.Primary" Style="font-size: 0.65rem; font-weight: 800;">Full Cash</MudButton>
-                                <MudButton Size="Size.Small" OnClick='() => { CashAmount = 0; AccountAmount = GrandTotal; }' Variant="Variant.Text" Color="Color.Success" Style="font-size: 0.65rem; font-weight: 800;">Full A/C</MudButton>
-                                <MudSpacer />
-                                <MudButton Size="Size.Small" 
-                                           Variant="Variant.Filled" 
-                                           Color="@(BalanceDue > 0 ? Color.Error : Color.Dark)" 
-                                           DisableElevation="true"
-                                           Style="font-weight: 900; font-size: 0.7rem; border-radius: 6px; padding: 4px 12px;"> 
-                                    TOTAL DUES: ₹ @BalanceDue.ToString("N0")
-                                </MudButton>
+                        
+                        <div class="payment-actions">
+                            <MudButton Size="Size.Small" OnClick='() => { CashAmount = GrandTotal; AccountAmount = 0; }' Variant="Variant.Text" Class="payment-helper-btn">Full Cash</MudButton>
+                            <MudButton Size="Size.Small" OnClick='() => { CashAmount = 0; AccountAmount = GrandTotal; }' Variant="Variant.Text" Class="payment-helper-btn">Full A/C</MudButton>
+                            <MudSpacer />
+                            <div class="dues-badge @(BalanceDue > 0 ? "has-dues" : "")">
+                                TOTAL DUES: ₹ @BalanceDue.ToString("N0")
                             </div>
-
-                            @if (BalanceDue > 0)
-                            {
-                                <div style="margin-top: 16px; padding: 16px; background: #fff; border: 1px dashed #673ab7; border-radius: 12px; text-align: center; box-shadow: 0 4px 12px rgba(103, 58, 183, 0.1);">
-                                    <MudText Typo="Typo.caption" Style="color: #673ab7; font-weight: 950; display: block; margin-bottom: 8px; letter-spacing: 1px;">DIGITAL SETTLEMENT (UPI)</MudText>
-                                    <img src="@($"https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=upi://pay?pa=risham123sharma@ybl%26pn=Vikash%20Iron%26am={BalanceDue}%26cu=INR")" alt="UPI QR" style="width: 140px; height: 140px; border-radius: 8px;" />
-                                    <MudText Typo="Typo.body2" Style="font-family: 'JetBrains Mono', monospace; font-weight: 900; margin-top: 12px; color: #1e293b; font-size: 0.75rem;">risham123sharma@ybl</MudText>
-                                    <MudText Typo="Typo.caption" Style="color: #64748b; font-weight: 700; display: block; margin-top: 4px;">Verified: Rishabh Kumar Sharma</MudText>
-                                </div>
-                            }
                         </div>
 
-                        <MudButton Variant="Variant.Filled" 
-                                   Color="Color.Default" 
-                                   OnClick="TogglePreview" 
-                                   FullWidth="true" 
-                                   StartIcon="@(ShowPreview ? Icons.Material.Filled.VisibilityOff : Icons.Material.Filled.Visibility)"
-                                   Style="margin-top: 24px; border-radius: 12px; padding: 12px; background: var(--mud-palette-action-default-hover); color: var(--mud-palette-text-primary); font-weight: 800; font-size: 0.75rem;">
-                            @(ShowPreview ? "COLLAPSE AUDIT" : "INSPECT INVOICE")
-                        </MudButton>
+                        @if (BalanceDue > 0)
+                        {
+                            <div class="digital-settlement-card">
+                                <MudText Typo="Typo.caption" Class="upi-badge-title">DIGITAL SETTLEMENT (UPI)</MudText>
+                                <img src="@($"https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=upi://pay?pa=risham123sharma@ybl%26pn=Vikash%20Iron%26am={BalanceDue}%26cu=INR")" alt="UPI QR" class="upi-qr-code" />
+                                <MudText Typo="Typo.body2" Class="upi-address">risham123sharma@ybl</MudText>
+                                <MudText Typo="Typo.caption" Class="upi-verification">Verified: Rishabh Kumar Sharma</MudText>
+                            </div>
+                        }
+
+                        <button class="btn-inspect-invoice" @onclick="TogglePreview">
+                            <MudIcon Icon="@Icons.Material.Filled.Visibility" Class="inspect-btn-icon" />
+                            <span>@(ShowPreview ? "COLLAPSE AUDIT" : "INSPECT INVOICE")</span>
+                        </button>
 
                         @if (ShowPreview)
                         {
                             <div class="invoice-preview-card mt-4">
-                                <div style="padding: 16px;">
+                                <div class="invoice-preview-container">
                                     <!-- Fiscal Header -->
-                                    <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #1e293b; padding-bottom: 8px; margin-bottom: 12px;">
+                                    <div class="invoice-preview-header">
                                         <div>
-                                            <div style="font-size: 5px; color: #64748b; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em;">TAX INVOICE</div>
-                                            <div style="font-weight: 900; font-size: 10px; color: #1e293b;">VIKASH IRON AND STEEL</div>
-                                            <div style="font-size: 5px; color: #64748b;">EKMA PARSA ROAD · SESSION 2026-27</div>
+                                            <div class="preview-tax-label">TAX INVOICE</div>
+                                            <div class="preview-company-name">VIKASH IRON AND STEEL</div>
+                                            <div class="preview-company-address">EKMA PARSA ROAD · SESSION 2026-27</div>
                                         </div>
-                                        <div style="text-align: right;">
-                                            <div style="font-size: 9px; font-weight: 900; color: var(--mud-palette-primary);">@(GeneratedBillNumber ?? "DRAFT")</div>
-                                            <div style="font-size: 5px; color: #64748b;">@BillDate?.ToString("dd MMM yyyy")</div>
+                                        <div class="text-right">
+                                            <div class="preview-bill-number">@(GeneratedBillNumber ?? "DRAFT")</div>
+                                            <div class="preview-bill-date">@BillDate?.ToString("dd MMM yyyy")</div>
                                             @if (BalanceDue > 0)
                                             {
-                                                <div style="font-size: 5px; color: #ef4444; font-weight: 800; margin-top: 2px;">DUES: ₹@BalanceDue.ToString("N0")</div>
+                                                <div class="preview-dues">DUES: ₹@BalanceDue.ToString("N0")</div>
                                             }
                                             else
                                             {
-                                                <div style="font-size: 5px; color: #16a34a; font-weight: 800; margin-top: 2px;">PAID IN FULL</div>
+                                                <div class="preview-paid">PAID IN FULL</div>
                                             }
                                         </div>
                                     </div>
 
                                     <!-- Entity Mapping -->
-                                    <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+                                    <div class="invoice-preview-entities">
                                         <div>
-                                            <div style="font-size: 5px; color: #64748b; font-weight: 800; text-transform: uppercase;">BILL TO</div>
-                                            <div style="font-size: 7px; font-weight: 800; margin-top: 2px;">@(IsRetailMode ? RetailShopName : (SelectedCustomer?.ShopName ?? "NO ENTITY SELECTED"))</div>
-                                            <div style="font-size: 5px; color: #64748b;">@(IsRetailMode ? $"{RetailCustomerName} · {RetailPhone}" : SelectedCustomer?.PhoneNumber)</div>
+                                            <div class="preview-section-title">BILL TO</div>
+                                            <div class="preview-entity-name">@(IsRetailMode ? RetailShopName : (SelectedCustomer?.ShopName ?? "NO ENTITY SELECTED"))</div>
+                                            <div class="preview-entity-details">@(IsRetailMode ? $"{RetailCustomerName} · {RetailPhone}" : SelectedCustomer?.PhoneNumber)</div>
                                         </div>
                                         @if (IncludeGST && !string.IsNullOrEmpty(GstinValue))
                                         {
-                                            <div style="text-align: right;">
-                                                <div style="font-size: 5px; color: #64748b; font-weight: 800; text-transform: uppercase;">GSTIN</div>
-                                                <div style="font-size: 6px; font-weight: 700; margin-top: 2px;">@GstinValue</div>
+                                            <div class="text-right">
+                                                <div class="preview-section-title">GSTIN</div>
+                                                <div class="preview-entity-name">@GstinValue</div>
                                             </div>
                                         }
                                     </div>
 
                                     <!-- Audit Ledger Table -->
-                                    <table style="width: 100%; border-collapse: collapse; margin-top: 8px;">
+                                    <table class="preview-table">
                                         <thead>
-                                            <tr style="border-bottom: 1px solid #e2e8f0;">
-                                                <th style="text-align: left; padding: 4px 0; font-size: 5px; color: #64748b; text-transform: uppercase;">Item</th>
-                                                <th style="text-align: right; padding: 4px 0; font-size: 5px; color: #64748b; text-transform: uppercase;">Qty</th>
-                                                <th style="text-align: right; padding: 4px 0; font-size: 5px; color: #64748b; text-transform: uppercase;">Amt</th>
+                                            <tr class="preview-header-row">
+                                                <th class="text-left preview-th">Item</th>
+                                                <th class="text-right preview-th">Qty</th>
+                                                <th class="text-right preview-th">Amt</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             @foreach (var r in BillRows.Where(x => x.SelectedMaterial != null).Take(8))
                                             {
-                                                <tr style="border-bottom: 1px dashed #f1f5f9;">
-                                                    <td style="padding: 4px 0; font-size: 6px; font-weight: 600;">@r.SelectedMaterial?.Name</td>
-                                                    <td style="padding: 4px 0; font-size: 6px; text-align: right;">@r.Quantity.ToString("N0")</td>
-                                                    <td style="padding: 4px 0; font-size: 6px; text-align: right; font-weight: 700;">₹ @r.TotalPrice.ToString("N0")</td>
+                                                <tr class="preview-item-row">
+                                                    <td class="preview-td">@r.SelectedMaterial?.Name</td>
+                                                    <td class="preview-td text-right">@r.Quantity.ToString("N0")</td>
+                                                    <td class="preview-td text-right preview-td-total">₹ @r.TotalPrice.ToString("N0")</td>
                                                 </tr>
                                             }
                                         </tbody>
                                     </table>
 
                                     <!-- Fiscal Finalization -->
-                                    <div style="margin-top: 12px; padding-top: 8px; border-top: 1px solid #e2e8f0; text-align: right;">
+                                    <div class="preview-totals">
                                         @if (IncludeGST)
                                         {
-                                            <div style="font-size: 5px; color: #64748b; margin-bottom: 2px;">GST (9% + 9%): ₹ @((CGSTAmount + SGSTAmount).ToString("N0"))</div>
+                                            <div class="preview-total-row">GST (9% + 9%): ₹ @((CGSTAmount + SGSTAmount).ToString("N0"))</div>
                                         }
                                         @if (BhadaAmount > 0)
                                         {
-                                            <div style="font-size: 5px; color: #64748b; margin-bottom: 2px;">Logistics: ₹ @BhadaAmount.ToString("N0")</div>
+                                            <div class="preview-total-row">Logistics: ₹ @BhadaAmount.ToString("N0")</div>
                                         }
-                                        <div style="font-size: 9px; font-weight: 900; color: var(--mud-palette-primary); border-top: 2px solid var(--mud-palette-primary); display: inline-block; padding-top: 4px; margin-top: 4px;">₹ @GrandTotal.ToString("N0")</div>
+                                        <div class="preview-grand-total">₹ @GrandTotal.ToString("N0")</div>
                                     </div>
                                 </div>
                             </div>
                         }
                     </div>
 
-                    <!-- Stock Pulse Indicators -->
-                    <div class="terra-card mt-4" style="padding: 16px;">
-                        <span class="section-headline">Warehouse Pulse</span>
+                    <!-- Warehouse Pulse Indicators -->
+                    <div class="terra-card">
+                        <div class="warehouse-pulse-header">
+                            <span class="section-headline mb-0-headline">WAREHOUSE PULSE</span>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--mud-palette-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="warehouse-pulse-icon"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                        </div>
                         @if (!BillRows.Any(r => r.SelectedMaterial != null))
                         {
-                            <MudText Typo="Typo.caption" Color="Color.Secondary" Style="display: block; text-align: center; font-style: italic; font-size: 0.65rem;">Resource telemetry.</MudText>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="warehouse-pulse-empty">Resource telemetry.</MudText>
                         }
-                        <MudStack Spacing="2">
+                        <MudStack Spacing="3">
                             @foreach (var row in BillRows.Where(r => r.SelectedMaterial != null))
                             {
                                 <div>
-                                    <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
-                                        <MudText Typo="Typo.caption" Style="font-weight: 800; font-size: 0.65rem;">@row.SelectedMaterial!.Name</MudText>
-                                        <MudText Typo="Typo.caption" Style="font-weight: 900; font-size: 0.65rem;" Color="Color.Primary">@row.SelectedMaterial.StockMT KG</MudText>
+                                    <div class="warehouse-pulse-row">
+                                        <MudText Typo="Typo.caption" Class="warehouse-material-name">@row.SelectedMaterial!.Name</MudText>
+                                        <MudText Typo="Typo.caption" Class="warehouse-material-stock">@row.SelectedMaterial.StockMT KG</MudText>
                                     </div>
-                                    <MudProgressLinear Color="Color.Primary" Value="@((double)row.SelectedMaterial.StockMT)" Max="20000" Rounded="true" Size="Size.Small" />
+                                    <MudProgressLinear Color="Color.Primary" Value="@((double)row.SelectedMaterial.StockMT)" Max="20000" Rounded="true" Size="Size.Small" Class="warehouse-progress-bar" />
                                 </div>
                             }
                         </MudStack>
@@ -467,40 +414,42 @@
                 </div>
             </MudItem>
         </MudGrid>
+        
+        <!-- Bottom Section: Pending Drafts Grid -->
         <div class="main-canvas mt-8 pb-10">
-            <div class="terra-card" style="padding: 24px; border: 1px solid rgba(255, 255, 255, 0.1); background: var(--mud-palette-surface); box-shadow: 0 4px 25px rgba(0,0,0,0.3);">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+            <div class="terra-card">
+                <div class="pending-drafts-header">
                     <div>
-                        <MudText Typo="Typo.h6" Style="font-weight: 950; letter-spacing: 1px; color: var(--mud-palette-text-primary);">PENDING DRAFTS</MudText>
-                        <MudText Typo="Typo.caption" Style="color: var(--mud-palette-text-secondary);">Unfinished fiscal audits in your queue.</MudText>
+                        <MudText Typo="Typo.subtitle1" Class="pending-drafts-title">PENDING DRAFTS</MudText>
+                        <MudText Typo="Typo.caption" Class="pending-drafts-subtitle">Unfinished fiscal audits in your queue.</MudText>
                     </div>
-                    <MudButton StartIcon="@Icons.Material.Filled.Refresh" Color="Color.Info" Variant="Variant.Text" OnClick="LoadDrafts" Size="Size.Small" Style="font-weight: 800;">Synchronize Queue</MudButton>
+                    <MudButton StartIcon="@Icons.Material.Filled.Refresh" Color="Color.Primary" Variant="Variant.Text" OnClick="LoadDrafts" Size="Size.Small" Class="pending-drafts-sync-btn">Synchronize Queue</MudButton>
                 </div>
 
-                <MudTable Items="@DraftBills" Hover="true" Elevation="0" Dense="true" Style="background: transparent;">
+                <MudTable Items="@DraftBills" Hover="true" Elevation="0" Dense="true" Class="pending-drafts-table">
                     <HeaderContent>
-                        <MudTh Style="font-size: 0.65rem; font-weight: 900; color: #f59e0b; text-transform: uppercase; letter-spacing: 0.05em;">Draft ID</MudTh>
-                        <MudTh Style="font-size: 0.65rem; font-weight: 900; color: #f59e0b; text-transform: uppercase; letter-spacing: 0.05em;">Shop / Entity</MudTh>
-                        <MudTh Style="font-size: 0.65rem; font-weight: 900; color: #f59e0b; text-transform: uppercase; letter-spacing: 0.05em;">Date</MudTh>
-                        <MudTh Style="font-size: 0.65rem; font-weight: 900; color: #f59e0b; text-transform: uppercase; letter-spacing: 0.05em; text-align: right;">Total (₹)</MudTh>
-                        <MudTh Style="font-size: 0.65rem; font-weight: 900; color: #f59e0b; text-transform: uppercase; letter-spacing: 0.05em; text-align: right;">Actions</MudTh>
+                        <MudTh Class="draft-th col-id">Draft ID</MudTh>
+                        <MudTh Class="draft-th col-entity">Shop / Entity</MudTh>
+                        <MudTh Class="draft-th col-date">Date</MudTh>
+                        <MudTh Class="draft-th col-total text-right">Total (₹)</MudTh>
+                        <MudTh Class="draft-th col-actions text-right">Actions</MudTh>
                     </HeaderContent>
                     <RowTemplate>
-                        <MudTd Style="font-family: 'JetBrains Mono', monospace; font-weight: 800; color: var(--mud-palette-primary); padding: 12px 8px;">@context.BillNumber</MudTd>
-                        <MudTd Style="font-weight: 800; color: var(--mud-palette-text-primary);">@(string.IsNullOrEmpty(context.ShopName) ? "Quick/Retail Draft" : context.ShopName)</MudTd>
-                        <MudTd Style="font-size: 0.8rem; color: var(--mud-palette-text-secondary);">@context.BillDate.ToString("dd MMM yyyy")</MudTd>
-                        <MudTd Style="text-align: right; font-weight: 900; color: #10b981; font-family: 'JetBrains Mono', monospace;">₹@context.GrandTotal.ToString("N0")</MudTd>
-                        <MudTd Style="text-align: right;">
-                            <div style="display: flex; justify-content: flex-end; gap: 8px;">
-                                <MudIconButton Icon="@Icons.Material.Filled.Autorenew" Size="Size.Small" Color="Color.Success" Title="Resume Audit" OnClick="() => ResumeDraft(context)" Style="background: rgba(16,185,129,0.1);" />
-                                <MudIconButton Icon="@Icons.Material.Filled.DeleteForever" Size="Size.Small" Color="Color.Error" Title="Discard" OnClick="() => DeleteDraft(context.Id)" Style="background: rgba(244,63,94,0.1);" />
+                        <MudTd Class="draft-td draft-id">@context.BillNumber</MudTd>
+                        <MudTd Class="draft-td draft-entity">@(string.IsNullOrEmpty(context.ShopName) ? "Quick/Retail Draft" : context.ShopName.ToUpper())</MudTd>
+                        <MudTd Class="draft-td draft-date">@context.BillDate.ToString("dd MMM yyyy")</MudTd>
+                        <MudTd Class="draft-td draft-total text-right">₹ @context.GrandTotal.ToString("N0")</MudTd>
+                        <MudTd Class="draft-td draft-actions text-right">
+                            <div class="draft-actions-wrapper">
+                                <MudIconButton Icon="@Icons.Material.Filled.Autorenew" Size="Size.Small" Color="Color.Primary" OnClick="() => ResumeDraft(context)" Class="draft-action-btn primary" />
+                                <MudIconButton Icon="@Icons.Material.Filled.DeleteForever" Size="Size.Small" Color="Color.Error" OnClick="() => DeleteDraft(context.Id)" Class="draft-action-btn error" />
                             </div>
                         </MudTd>
                     </RowTemplate>
                     <NoRecordsContent>
                         <div class="pa-12 text-center">
-                            <MudIcon Icon="@Icons.Material.Filled.History" Style="color: var(--mud-palette-divider); font-size: 64px;" />
-                            <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-disabled);" Class="mt-4">The draft queue is currently empty.</MudText>
+                            <MudIcon Icon="@Icons.Material.Filled.History" Class="draft-empty-icon" />
+                            <MudText Typo="Typo.body2" Class="draft-empty-text">The draft queue is currently empty.</MudText>
                         </div>
                     </NoRecordsContent>
                 </MudTable>

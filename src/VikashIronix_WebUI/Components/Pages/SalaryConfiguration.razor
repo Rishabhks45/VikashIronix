@@ -86,6 +86,8 @@
     <MudText Typo="Typo.body1" Color="Color.Secondary">Configure and manage fixed monthly compensation for all staff members.</MudText>
 </div>
 
+<PageLoader IsVisible="@_loading" Text="Synchronizing staff salary data..." />
+
 <MudPaper Elevation="0" Style="border: 1px solid var(--mud-palette-divider); border-radius: 20px;" Class="pa-0">
     <div class="pa-6 border-b d-flex align-center">
         <MudText Typo="Typo.h6" Style="font-weight: 800;">Staff Payroll List</MudText>
@@ -95,14 +97,7 @@
                    StartIcon="@Icons.Material.Filled.Add">Setup Salary</MudButton>
     </div>
 
-    @if (_loading)
-    {
-        <div class="pa-12 d-flex flex-column align-center justify-center">
-            <MudProgressCircular Color="Color.Primary" Indeterminate="true" Class="mb-4" />
-            <MudText Typo="Typo.body2" Color="Color.Secondary">Synchronizing staff salary data...</MudText>
-        </div>
-    }
-    else
+    @if (!_loading)
     {
         <MudDataGrid Items="@SalaryList" Hover="true" Elevation="0" Striped="true">
             <Columns>
