@@ -6,98 +6,172 @@
 @inject NavigationManager Nav
 @inject VikashIronix_WebUI.Services.AuthServices.Interfaces.IAuthService AuthService
 
-<PageTitle>Secure Login - Vikash Iron Executive Suite</PageTitle>
+<PageTitle>Login - Vikashironix Executive Suite</PageTitle>
 
-<div class="login-page">
-    <div class="login-card">
-        <!-- Brand Header -->
-        <div class="brand-header">
-            <h1 class="brand-title">VIKASH IRON</h1>
-            <div class="brand-subtitle">EXECUTIVE SUITE</div>
+<div class="login-container">
+    <!-- Left panel (feature presentation) -->
+    <div class="left-panel">
+        <!-- Top brand -->
+        <div class="left-brand">
+            <div class="logo-box">VI</div>
+            <div>
+                <span class="left-brand-title">Vikashironix</span>
+                <span class="left-brand-subtitle">EXECUTIVE SUITE</span>
+            </div>
         </div>
 
-        <div class="mb-6">
-            <MudText Typo="Typo.h6" Style="font-weight: 800; color: #fff;">Secure Access</MudText>
-            <MudText Typo="Typo.caption" Style="color: rgba(255,255,255,0.5);">Infrastructure surveillance monitored.</MudText>
-        </div>
+        <!-- Center content -->
+        <div class="left-center">
+            <h1 class="left-heading">Manage your iron business smarter.</h1>
+            <p class="left-desc">
+                Complete suite for billing, inventory, payroll and customer management — all in one place.
+            </p>
 
-        @if (!string.IsNullOrEmpty(ErrorMsg))
-        {
-            <MudAlert Severity="Severity.Error" Dense="true" Class="mb-4 rounded-lg" Style="background: rgba(244, 67, 54, 0.1); color: #f44336; border: 1px solid rgba(244, 67, 54, 0.2);">
-                @ErrorMsg
-            </MudAlert>
-        }
+            <div class="features-list">
+                <div class="feature-card">
+                    <div class="feature-icon icon-analytics">
+                        <!-- Custom SVG Chart Icon -->
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="20" x2="18" y2="10"></line>
+                            <line x1="12" y1="20" x2="12" y2="4"></line>
+                            <line x1="6" y1="20" x2="6" y2="14"></line>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="feature-title">Real-time Analytics</div>
+                        <div class="feature-desc">Track revenue, stock & customers live</div>
+                    </div>
+                </div>
 
-        <MudStack Spacing="3">
-            <!-- Username field -->
-            <div>
-                <label class="input-label">Username or Email</label>
-                <MudTextField @bind-Value="Email"
-                              Variant="Variant.Outlined"
-                              InputType="InputType.Email"
-                              Placeholder="admin@vikashiron.com"
-                              Adornment="Adornment.Start"
-                              AdornmentIcon="@Icons.Material.Filled.Person"
-                              Margin="Margin.None"
-                              FullWidth="true"
-                              Class="glass-input" />
-            </div>
+                <div class="feature-card">
+                    <div class="feature-icon icon-inventory">
+                        <!-- Custom SVG Box Icon -->
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                            <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                            <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="feature-title">Smart Inventory</div>
+                        <div class="feature-desc">Full material catalog with stock alerts</div>
+                    </div>
+                </div>
 
-            <!-- Password field -->
-            <div>
-                <label class="input-label">Security Credential</label>
-                <MudTextField @bind-Value="Password"
-                              Variant="Variant.Outlined"
-                              InputType="@PwdType"
-                              Adornment="Adornment.End"
-                              AdornmentIcon="@PwdIcon"
-                              OnAdornmentClick="TogglePassword"
-                              Margin="Margin.None"
-                              FullWidth="true"
-                              Class="glass-input" />
-            </div>
-
-            <!-- Remember + Forgot -->
-            <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 8px;">
-                <MudCheckBox T="bool" @bind-Value="KeepSession" Dense="true" Color="Color.Primary">
-                    <span style="font-size: 0.8rem; color: rgba(255,255,255,0.7); font-weight: 600;">Stay Authenticated</span>
-                </MudCheckBox>
-                <MudLink Href="/forgot-password" Underline="Underline.None" Style="font-size: 0.8rem; font-weight: 700; color: #6ee591;">Reset Access?</MudLink>
-            </div>
-
-            <!-- Login Button -->
-            <MudButton Variant="Variant.Filled"
-                       FullWidth="true"
-                       OnClick="HandleLogin"
-                       Class="login-button"
-                       Disabled="IsLoading">
-                @if (IsLoading)
-                {
-                    <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-3" />
-                    <span>VERIFYING...</span>
-                }
-                else
-                {
-                    <span>INITIALIZE SESSION</span>
-                }
-            </MudButton>
-
-            <!-- System Status -->
-            <div style="text-align: center;">
-                <div class="status-badge">
-                    <div class="status-dot"></div>
-                    <span class="status-text">Network Integrity Optimal</span>
+                <div class="feature-card">
+                    <div class="feature-icon icon-ledger">
+                        <!-- Custom SVG Ledger/Invoice Icon -->
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="16" y1="6" x2="8" y2="6"></line>
+                            <line x1="16" y1="10" x2="8" y2="10"></line>
+                            <line x1="16" y1="14" x2="8" y2="14"></line>
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="feature-title">Billing & Ledger</div>
+                        <div class="feature-desc">Invoices, udhaar tracking & daily audits</div>
+                    </div>
                 </div>
             </div>
-        </MudStack>
+        </div>
+
+        <!-- Bottom brand info -->
+        <div class="left-footer">
+            v4.0.0 PRO - Enterprise
+        </div>
     </div>
 
-    <!-- Footer Links -->
-    <div class="footer-links">
-        <a href="#" class="footer-link">Security</a>
-        <a href="#" class="footer-link">Privacy</a>
-        <a href="#" class="footer-link">Status</a>
-        <span class="footer-link" style="opacity: 0.5;">v4.0.0-PRO</span>
+    <!-- Right panel (Login form) -->
+    <div class="right-panel">
+        <div style="flex-grow: 1; display: flex; align-items: center; width: 100%;">
+            <div class="login-form-wrapper">
+                <!-- Welcome headers -->
+                <div class="welcome-header">
+                    <h2 class="welcome-title">Welcome back</h2>
+                    <p class="welcome-subtitle">Sign in to your account to continue</p>
+                </div>
+
+                @if (!string.IsNullOrEmpty(ErrorMsg))
+                {
+                    <MudAlert Severity="Severity.Error" Dense="true" Style="background: rgba(239, 68, 68, 0.08); color: #dc2626; border: 1px solid rgba(239, 68, 68, 0.15); border-radius: 12px; font-weight: 500; font-size: 0.85rem; padding: 10px 14px; margin-bottom: 20px;">
+                        @ErrorMsg
+                    </MudAlert>
+                }
+
+                <MudStack Spacing="4">
+                    <!-- Email / Username input -->
+                    <div>
+                        <label class="custom-label">Email or Username</label>
+                        <MudTextField @bind-Value="Email"
+                                      Variant="Variant.Outlined"
+                                      InputType="InputType.Email"
+                                      Placeholder="rajuyadav@VikashIronix.com"
+                                      Adornment="Adornment.Start"
+                                      AdornmentIcon="@Icons.Material.Filled.AlternateEmail"
+                                      Margin="Margin.None"
+                                      FullWidth="true"
+                                      Class="glass-input" />
+                    </div>
+
+                    <!-- Password input -->
+                    <div>
+                        <div class="label-row">
+                            <label class="custom-label" style="margin-bottom: 0;">Password</label>
+                            <MudLink Href="/forgot-password" Underline="Underline.None" Style="font-size: 0.85rem; font-weight: 600; color: #6366f1;">Forgot password?</MudLink>
+                        </div>
+                        <MudTextField @bind-Value="Password"
+                                      Variant="Variant.Outlined"
+                                      InputType="@PwdType"
+                                      Adornment="Adornment.End"
+                                      AdornmentIcon="@PwdIcon"
+                                      OnAdornmentClick="TogglePassword"
+                                      Margin="Margin.None"
+                                      FullWidth="true"
+                                      Class="glass-input" />
+                    </div>
+
+                    <!-- Checkbox Keep Signed In -->
+                    <div>
+                        <MudCheckBox T="bool" @bind-Value="KeepSession" Dense="true" Color="Color.Primary">
+                            <span class="checkbox-text">Keep me signed in for 7 days</span>
+                        </MudCheckBox>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <MudButton Variant="Variant.Filled"
+                               FullWidth="true"
+                               OnClick="HandleLogin"
+                               Class="login-button"
+                               Disabled="IsLoading">
+                        @if (IsLoading)
+                        {
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-3" Style="color: #ffffff;" />
+                            <span>SIGNING IN...</span>
+                        }
+                        else
+                        {
+                            <span>SIGN IN</span>
+                        }
+                    </MudButton>
+
+                    <!-- System Status -->
+                    <div style="text-align: center;">
+                        <div class="status-container">
+                            <div class="status-dot-pulse"></div>
+                            <span class="status-lbl">All systems operational</span>
+                        </div>
+                    </div>
+                </MudStack>
+            </div>
+        </div>
+
+        <!-- Footer links -->
+        <div class="right-footer">
+            <a href="#" class="right-footer-link">Privacy</a>
+            <a href="#" class="right-footer-link">Terms</a>
+            <a href="#" class="right-footer-link">Support</a>
+        </div>
     </div>
 </div>
 
@@ -130,7 +204,6 @@
         { 
             EmailId = Email, 
             Password = Password, 
-            // LoginDevice = "Web" 
         };
         
         var response = await AuthService.UserLoginAsync(request);

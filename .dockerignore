@@ -1,0 +1,11 @@
+**/.git
+**/.vs
+**/bin
+**/obj
+**/.vscode
+*.sln.user
+**/node_modules
+out/
+appsettings.Development.json
+src/VikashIronix_WebUI/bin
+src/VikashIronix_WebUI/obj
