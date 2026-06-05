@@ -21,7 +21,6 @@
         <AuthorizeView Roles="Accountant,Super Admin">
             <Authorized>
                 <div class="sidebar-section-title">TRADE OPERATIONS</div>
-                <MudNavLink Href="ledger" Icon="@Icons.Material.Filled.Work">Trade Portfolio</MudNavLink>
                 <MudNavLink Href="billing/create" Icon="@Icons.Material.Filled.Description">Generate Invoice</MudNavLink>
                 <MudNavLink Href="financials/daily" Icon="@Icons.Material.Filled.BarChart">Daily Revenue Audit</MudNavLink>
                 <MudNavLink Href="ledger" Icon="@Icons.Material.Filled.MenuBook">Trade Ledger</MudNavLink>
@@ -32,7 +31,7 @@
             <Authorized>
                 <div class="sidebar-section-title">CORE MODULES</div>
                 <MudNavGroup Title="Logistics Core" Icon="@Icons.Material.Filled.LocalShipping" Expanded="false">
-                    <MudNavLink Href="materials" Icon="@Icons.Material.Filled.ViewList">Material Catalog</MudNavLink>
+                    <MudNavLink Href="materials" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.ViewList">Material Catalog</MudNavLink>
                     
                     <AuthorizeView Roles="Super Admin" Context="inner">
                         <MudNavLink Href="materials/add" Icon="@Icons.Material.Filled.AddCircle">Material Ingest</MudNavLink>
@@ -45,7 +44,7 @@
                 
                 <AuthorizeView Roles="Accountant,Super Admin" Context="inner_ops">
                     <MudNavLink Href="customers" Icon="@Icons.Material.Filled.People">Entity Profiles</MudNavLink>
-                    <MudNavLink Href="financials" Icon="@Icons.Material.Filled.AccountBalance">Fiscal Overview</MudNavLink>
+                    <MudNavLink Href="financials" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.AccountBalance">Fiscal Overview</MudNavLink>
                 </AuthorizeView>
             </Authorized>
         </AuthorizeView>

@@ -7,7 +7,8 @@ CREATE OR ALTER PROCEDURE [dbo].[usp_User_Profile_Management]
     @PhoneNumber NVARCHAR(20) = NULL,
     @Bio NVARCHAR(MAX) = NULL,
     @Location NVARCHAR(200) = NULL,
-    @PasswordHash NVARCHAR(MAX) = NULL
+    @PasswordHash NVARCHAR(MAX) = NULL,
+    @ProfilePictureUrl NVARCHAR(500) = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -25,7 +26,8 @@ BEGIN
             -- Fixed alias to match UserDto property 'Role'
             r.Name AS Role,
             u.is_active,
-            u.created_at
+            u.created_at,
+            u.ProfilePictureUrl
         FROM users u
         LEFT JOIN roles r ON u.role_id = r.id
         WHERE u.id = @UserId;
@@ -40,6 +42,7 @@ BEGIN
             PhoneNumber = COALESCE(@PhoneNumber, PhoneNumber),
             Bio = COALESCE(@Bio, Bio),
             Location = COALESCE(@Location, Location),
+            ProfilePictureUrl = CASE WHEN @ProfilePictureUrl = '' THEN NULL ELSE COALESCE(@ProfilePictureUrl, ProfilePictureUrl) END,
             updated_at = SYSDATETIME()
         WHERE id = @UserId;
         

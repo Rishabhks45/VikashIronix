@@ -1,3 +1,4 @@
+using System;
 using SharedKernel.DTOs.Users;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -6,6 +7,9 @@ namespace VikashIronix_WebUI.Services.Users
 {
     public interface IUserService
     {
+        event Action<UserDto>? OnProfileUpdated;
+        void NotifyProfileUpdated(UserDto profile);
+
         Task<List<UserDto>> GetUsersAsync();
         Task CreateUserAsync(UserDto user);
         Task UpdateUserAsync(UserDto user);
@@ -18,3 +22,4 @@ namespace VikashIronix_WebUI.Services.Users
         Task ChangePasswordAsync(Guid userId, string newPassword);
     }
 }
+

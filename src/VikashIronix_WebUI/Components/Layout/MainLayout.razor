@@ -1,4 +1,8 @@
 @inherits LayoutComponentBase
+@implements IDisposable
+@using VikashIronix_WebUI.Services.Users
+@using SharedKernel.DTOs.Users
+@inject IUserService UserService
 
 <MudThemeProvider @rendermode="InteractiveServer" Theme="AdminTheme" IsDarkMode="_isDarkMode" />
 <MudPopoverProvider @rendermode="InteractiveServer" />
@@ -25,10 +29,17 @@
                 <span class="notification-badge">3</span>
             </div>
 
-            <MudMenu AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight" Class="ml-2">
+            <MudMenu AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight" Class="ml-2" ActivationEvent="MouseEvent.MouseOver" Dense="true">
                 <ActivatorContent>
                     <div class="user-avatar-trigger">
-                        <MudAvatar Color="Color.Dark" Class="user-avatar">@UserInitials</MudAvatar>
+                        @if (!string.IsNullOrEmpty(UserProfilePictureUrl))
+                        {
+                            <img src="@UserProfilePictureUrl" class="user-avatar-img" alt="Profile" />
+                        }
+                        else
+                        {
+                            <MudAvatar Color="Color.Dark" Class="user-avatar">@UserInitials</MudAvatar>
+                        }
                         <div class="user-profile-details d-none d-sm-flex">
                             <span class="user-profile-name">@UserName</span>
                             <span class="user-profile-role">@UserRole</span>
@@ -36,7 +47,7 @@
                     </div>
                 </ActivatorContent>
                 <ChildContent>
-                    <div class="pa-4 menu-profile-header">
+                    <div class="px-4 py-2 menu-profile-header">
                         <MudText Typo="Typo.subtitle2" Class="menu-profile-username">@UserName</MudText>
                         <MudText Typo="Typo.caption" Color="Color.Secondary">@UserRole</MudText>
                     </div>
@@ -70,9 +81,38 @@
     private string UserName = "Initializing...";
     private string UserRole = "Staff";
     private string UserInitials = "??";
+    private string? UserProfilePictureUrl = null;
 
     bool _drawerOpen = true;
     bool _isDarkMode = false;
+
+    protected override void OnInitialized()
+    {
+        UserService.OnProfileUpdated += HandleProfileUpdated;
+    }
+
+    private void HandleProfileUpdated(UserDto profile)
+    {
+        if (profile != null)
+        {
+            UserProfilePictureUrl = profile.ProfilePictureUrl;
+            UserName = $"{profile.FirstName} {profile.LastName}";
+            if (!string.IsNullOrEmpty(UserName))
+            {
+                var parts = UserName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length > 1) 
+                    UserInitials = $"{parts[0][0]}{parts[1][0]}".ToUpper();
+                else if (parts.Length > 0)
+                    UserInitials = parts[0][0].ToString().ToUpper();
+            }
+            InvokeAsync(StateHasChanged);
+        }
+    }
+
+    public void Dispose()
+    {
+        UserService.OnProfileUpdated -= HandleProfileUpdated;
+    }
 
     protected override async Task OnParametersSetAsync()
     {
@@ -94,6 +134,21 @@
                     UserInitials = $"{parts[0][0]}{parts[1][0]}".ToUpper();
                 else if (parts.Length > 0)
                     UserInitials = parts[0][0].ToString().ToUpper();
+            }
+
+            // Fetch user profile picture
+            var userIdStr = user.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (Guid.TryParse(userIdStr, out Guid userId))
+            {
+                try
+                {
+                    var profile = await UserService.GetProfileAsync(userId);
+                    UserProfilePictureUrl = profile?.ProfilePictureUrl;
+                }
+                catch
+                {
+                    UserProfilePictureUrl = null;
+                }
             }
         }
     }

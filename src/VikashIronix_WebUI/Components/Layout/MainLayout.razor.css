@@ -139,6 +139,14 @@
     height: 36px !important;
 }
 
+.user-avatar-img {
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    object-fit: cover;
+    border: 1px solid var(--mud-palette-divider);
+}
+
 .user-profile-details {
     display: flex;
     flex-direction: column;
@@ -159,7 +167,7 @@
 }
 
 .menu-profile-header {
-    min-width: 220px;
+    min-width: 170px;
 }
 
 .menu-profile-username {

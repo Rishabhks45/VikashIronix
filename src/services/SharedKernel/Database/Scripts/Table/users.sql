@@ -13,5 +13,6 @@
         DeletedAt DATETIME2 NULL,
         CreatedAt DATETIME2 NOT NULL DEFAULT SYSDATETIME(),
         UpdatedAt DATETIME2 NOT NULL DEFAULT SYSDATETIME(),
+        ProfilePictureUrl NVARCHAR(500) NULL,
         CONSTRAINT FK_Users_Roles FOREIGN KEY (role_id) REFERENCES roles(id)
     );

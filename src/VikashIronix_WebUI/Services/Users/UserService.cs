@@ -1,3 +1,4 @@
+using System;
 using SharedKernel.DTOs.Users;
 using System.Net.Http.Json;
 
@@ -7,10 +8,18 @@ namespace VikashIronix_WebUI.Services.Users
     {
         private readonly HttpClient _httpClient;
 
+        public event Action<UserDto>? OnProfileUpdated;
+
+        public void NotifyProfileUpdated(UserDto profile)
+        {
+            OnProfileUpdated?.Invoke(profile);
+        }
+
         public UserService(IHttpClientFactory httpClientFactory)
         {
             _httpClient = httpClientFactory.CreateClient("VikashIronixApi");
         }
+
 
         public async Task<List<UserDto>> GetUsersAsync()
         {

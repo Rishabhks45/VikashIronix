@@ -41,6 +41,10 @@ public class UserDto
     public DateTime? LastLoginAt { get; set; }
 
     public bool IsActive { get; set; }
+
+    public string? ProfilePictureUrl { get; set; }
+
+    public string? ImageBytes { get; set; }
 }
 
 // FluentValidation Validator

@@ -21,8 +21,11 @@ public static class DependencyInjection
     public static void AddServices(this WebApplicationBuilder builder)
     {
         // Add Razor Components
-        builder.Services.AddRazorComponents()
-            .AddInteractiveServerComponents();
+        _ = builder.Services
+            .AddRazorComponents()
+            .AddInteractiveServerComponents()
+            .AddCircuitOptions(x => { x.DetailedErrors = true; })
+            .AddHubOptions(x => { x.MaximumParallelInvocationsPerClient = 1; x.MaximumReceiveMessageSize = 1024 * 1024 * 5; });
 
         builder.Services.AddControllers();
         // Add MudBlazor services
@@ -126,6 +129,7 @@ public static class DependencyInjection
         services.AddScoped<VikashIronix_WebUI.Services.Bills.IBillService, VikashIronix_WebUI.Services.Bills.BillService>();
         services.AddScoped<VikashIronix_WebUI.Services.Holidays.IHolidayService, VikashIronix_WebUI.Services.Holidays.HolidayService>();
         services.AddScoped<VikashIronix_WebUI.Services.Payroll.IPayrollService, VikashIronix_WebUI.Services.Payroll.PayrollService>();
+        services.AddScoped<VikashIronix_WebUI.Services.FileUpload.IFileUploadService, VikashIronix_WebUI.Services.FileUpload.FileUploadService>();
         
         services.AddScoped<IEmailSender, EmailService>();
     }

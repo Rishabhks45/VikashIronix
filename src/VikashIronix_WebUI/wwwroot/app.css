@@ -4,7 +4,7 @@
     --mud-elevation-3: 0 8px 24px rgba(46, 50, 48, 0.06);
     --mud-elevation-4: 0 10px 32px rgba(46, 50, 48, 0.07);
     --mud-default-borderradius: 12px;
-    --mud-appbar-height: 72px;
+    --mud-appbar-height: 60px;
     --mud-typography-default-font-family: 'Roboto', 'Inter', 'Nunito Sans', sans-serif;
     --mud-typography-h1-font-family: 'Literata', serif;
     --mud-typography-h2-font-family: 'Literata', serif;
@@ -17,23 +17,36 @@
     --mud-typography-body2-line-height: 1.6;
 }
 
-html, body {
+.mud-layout {
+    --mud-appbar-height: 60px;
+}
+
+html,
+body {
     font-family: 'Roboto', 'Inter', 'Nunito Sans', sans-serif;
     margin: 0;
     padding: 0;
     height: 100%;
 }
 
-body, .mud-typography-body1, .mud-typography-body2 {
+body,
+.mud-typography-body1,
+.mud-typography-body2 {
     font-family: 'Roboto', 'Inter', 'Nunito Sans', sans-serif !important;
 }
 
-.mud-typography-h1, .mud-typography-h2, .mud-typography-h3, .mud-typography-h4, .mud-typography-h5, .mud-typography-h6 { 
-    font-family: 'Literata', serif !important; 
+.mud-typography-h1,
+.mud-typography-h2,
+.mud-typography-h3,
+.mud-typography-h4,
+.mud-typography-h5,
+.mud-typography-h6 {
+    font-family: 'Literata', serif !important;
     font-weight: 700 !important;
 }
 
-a, .btn-link {
+a,
+.btn-link {
     color: #006bb7;
 }
 
@@ -43,8 +56,12 @@ a, .btn-link {
     border-color: #1861ac;
 }
 
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+.btn:focus,
+.btn:active:focus,
+.btn-link.nav-link:focus,
+.form-control:focus,
+.form-check-input:focus {
+    box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
 }
 
 .content {
@@ -73,20 +90,22 @@ h1:focus {
     color: white;
 }
 
-    .blazor-error-boundary::after {
-        content: "An error has occurred."
-    }
+.blazor-error-boundary::after {
+    content: "An error has occurred."
+}
 
 .darker-border-checkbox.form-check-input {
     border-color: #929292;
 }
 
-.form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
+.form-floating>.form-control-plaintext::placeholder,
+.form-floating>.form-control::placeholder {
     color: var(--bs-secondary-color);
     text-align: end;
 }
 
-.form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
+.form-floating>.form-control-plaintext:focus::placeholder,
+.form-floating>.form-control:focus::placeholder {
     text-align: start;
 }
 
@@ -420,10 +439,12 @@ h1:focus {
         transform: scale(0.95);
         box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5);
     }
+
     70% {
         transform: scale(1);
         box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
     }
+
     100% {
         transform: scale(0.95);
         box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
@@ -466,14 +487,14 @@ h1:focus {
     .left-panel {
         display: none;
     }
-    
+
     .right-panel {
         flex: 1;
         padding: 48px 24px;
         justify-content: center;
         background-color: #f9fafb;
     }
-    
+
     .login-form-wrapper {
         background-color: #ffffff;
         padding: 40px 28px;
@@ -481,7 +502,7 @@ h1:focus {
         box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.05);
         border: 1px solid #e5e7eb;
     }
-    
+
     .right-footer {
         position: absolute;
         bottom: 32px;
@@ -508,8 +529,10 @@ h1:focus {
     height: 100%;
     overflow-y: auto;
     overflow-x: hidden !important;
-    scrollbar-width: none !important; /* Firefox */
-    -ms-overflow-style: none !important; /* IE/Edge */
+    scrollbar-width: none !important;
+    /* Firefox */
+    -ms-overflow-style: none !important;
+    /* IE/Edge */
 }
 
 .layout-drawer .mud-drawer-content::-webkit-scrollbar {

@@ -145,6 +145,7 @@ public class UsersRepository
             parameters.Add("@PhoneNumber", profile.PhoneNumber);
             parameters.Add("@Bio", profile.Bio);
             parameters.Add("@Location", profile.Location);
+            parameters.Add("@ProfilePictureUrl", profile.ProfilePictureUrl);
         }
 
         if (!string.IsNullOrEmpty(newPassword))
