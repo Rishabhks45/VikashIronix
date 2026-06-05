@@ -43,14 +43,14 @@
                     </div>
                 </header>
 
-                <MudStack Spacing="4">
+                <MudStack Spacing="2">
                     <!-- Entity Informatics -->
                     <div class="terra-card">
-                        <MudGrid Spacing="3" Class="align-center">
+                        <MudGrid Spacing="2" Class="align-center">
                             @if (!IsRetailMode)
                             {
-                                <MudItem xs="12" md="8">
-                                    <span class="section-headline">ENTITY / SHOP</span>
+                                <MudItem xs="12" md="7">
+                                    <span class="section-headline" style="font-size: 0.7rem;">ENTITY / SHOP</span>
                                     <MudAutocomplete T="CustomerDto"
                                                      Value="SelectedCustomer"
                                                      ValueChanged="OnCustomerSelected"
@@ -60,52 +60,45 @@
                                                      Placeholder="Type entity or shop name..."
                                                      AdornmentIcon="@Icons.Material.Filled.Search"
                                                      AdornmentColor="Color.Secondary"
-                                                     Class="input-field-h48" />
+                                                     Margin="Margin.Dense"
+                                                     Class="input-field-compact" />
                                 </MudItem>
                             }
                             else
                             {
                                 <MudItem xs="12" md="3">
-                                    <span class="section-headline">RETAIL SHOP NAME</span>
-                                    <MudTextField @bind-Value="RetailShopName" Variant="Variant.Outlined" Placeholder="e.g. KHUDRA SALE" Class="input-field-h48" />
-                                </MudItem>
-                                <MudItem xs="12" md="3">
-                                    <span class="section-headline">CUSTOMER NAME</span>
-                                    <MudTextField @bind-Value="RetailCustomerName" Variant="Variant.Outlined" Placeholder="Customer Name" Class="input-field-h48" />
+                                    <span class="section-headline" style="font-size: 0.7rem;">RETAIL SHOP</span>
+                                    <MudTextField @bind-Value="RetailShopName" Variant="Variant.Outlined" Placeholder="e.g. KHUDRA SALE" Margin="Margin.Dense" Class="input-field-compact" />
                                 </MudItem>
                                 <MudItem xs="12" md="2">
-                                    <span class="section-headline">PHONE</span>
-                                    <MudTextField @bind-Value="RetailPhone" Variant="Variant.Outlined" Placeholder="Mobile" Class="input-field-h48" />
+                                    <span class="section-headline" style="font-size: 0.7rem;">NAME</span>
+                                    <MudTextField @bind-Value="RetailCustomerName" Variant="Variant.Outlined" Placeholder="Name" Margin="Margin.Dense" Class="input-field-compact" />
+                                </MudItem>
+                                <MudItem xs="12" md="2">
+                                    <span class="section-headline" style="font-size: 0.7rem;">PHONE</span>
+                                    <MudTextField @bind-Value="RetailPhone" Variant="Variant.Outlined" Placeholder="Mobile" Margin="Margin.Dense" Class="input-field-compact" />
                                 </MudItem>
                             }
-                            
-                            <MudItem xs="12" md="4">
-                                <span class="section-headline">FISCAL AUDIT DATE</span>
-                                <div class="date-picker-card">
-                                    <div class="calendar-icon-box">
-                                        <MudIcon Icon="@Icons.Material.Filled.CalendarMonth" Class="calendar-icon" />
-                                    </div>
-                                    <div class="date-picker-details">
-                                        <MudDatePicker @bind-Date="BillDate" 
-                                                       Variant="Variant.Text" 
-                                                       DisableUnderLine="true" 
-                                                       Class="date-picker-input"
-                                                       DateFormat="dd MMM yyyy" />
-                                        <span class="date-day-label">@BillDate?.ToString("dddd")</span>
-                                    </div>
-                                </div>
+
+                            <MudItem xs="12" md="3">
+                                <span class="section-headline" style="font-size: 0.7rem;">DATE</span>
+                                <MudDatePicker @bind-Date="BillDate" 
+                                               Variant="Variant.Outlined"
+                                               Margin="Margin.Dense"
+                                               DateFormat="dd MMM yyyy"
+                                               Class="input-field-compact" />
                             </MudItem>
-                            
+
                             @if (SelectedCustomer != null && !IsRetailMode)
                             {
                                 <MudItem xs="12">
-                                    <div class="selected-customer-card">
-                                        <div class="customer-avatar-badge">
-                                            @SelectedCustomer.ShopName.Substring(0, 1)
+                                    <div class="selected-customer-card" style="padding: 8px; background: rgba(33, 150, 243, 0.05); border-radius: 6px; display: flex; gap: 8px; align-items: flex-start;">
+                                        <div style="width: 28px; height: 28px; background: var(--mud-palette-primary); border-radius: 4px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 0.75rem; flex-shrink: 0;">
+                                            @SelectedCustomer.ShopName.Substring(0, 1).ToUpper()
                                         </div>
-                                        <div>
-                                            <MudText Typo="Typo.body2" Class="customer-shop-name">@SelectedCustomer.ShopName</MudText>
-                                            <MudText Typo="Typo.caption" Class="customer-contact-info">Contact: @SelectedCustomer.CustomerName · @SelectedCustomer.PhoneNumber</MudText>
+                                        <div style="min-width: 0;">
+                                            <MudText Typo="Typo.caption" Style="font-weight: 700; display: block;">@SelectedCustomer.ShopName</MudText>
+                                            <MudText Typo="Typo.caption" Color="Color.Secondary" Style="font-size: 0.65rem;">@SelectedCustomer.CustomerName · @SelectedCustomer.PhoneNumber</MudText>
                                         </div>
                                     </div>
                                 </MudItem>
@@ -115,37 +108,38 @@
 
                     <!-- Line Items -->
                     <div class="terra-card p-0">
-                        <div class="trade-ledger-header">
-                            <span class="section-headline mb-0-headline">TRADE LEDGER SNAPSHOT</span>
-                            <MudSwitch @bind-Value="IncludeGST" Color="Color.Primary" Label="GST Audit" Class="gst-switch" />
+                        <div class="trade-ledger-header" style="padding: 8px 12px;">
+                            <span class="section-headline mb-0-headline" style="font-size: 0.75rem;">TRADE LEDGER</span>
+                            <MudSwitch @bind-Value="IncludeGST" Color="Color.Primary" Label="GST" Class="gst-switch" Size="Size.Small" />
                         </div>
                         
                         <div class="trade-ledger-body">
-                            <table class="audit-table">
+                            <table class="audit-table" style="font-size: 0.8rem;">
                                 <thead>
-                                    <tr>
-                                        <th class="col-desc">Resource Description</th>
-                                        <th class="col-weight">Weight</th>
-                                        <th class="col-rate">Rate</th>
-                                        <th class="col-total">Total</th>
-                                        <th class="col-actions"></th>
+                                    <tr style="height: 32px;">
+                                        <th class="col-desc" style="padding: 4px 6px;">Resource</th>
+                                        <th class="col-weight" style="padding: 4px 6px;">Weight</th>
+                                        <th class="col-rate" style="padding: 4px 6px;">Rate</th>
+                                        <th class="col-total" style="padding: 4px 6px;">Total</th>
+                                        <th class="col-actions" style="padding: 4px 6px; width: 30px;"></th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @foreach (var row in BillRows)
                                     {
-                                        <tr class="material-row">
-                                            <td>
+                                        <tr class="material-row" style="height: 32px;">
+                                            <td style="padding: 4px 6px;">
                                                 <MudAutocomplete T="MaterialDto"
                                                                  Value="row.SelectedMaterial"
                                                                  ValueChanged="@(m => OnMaterialSelected(row, m))"
                                                                  SearchFunc="SearchMaterials"
-                                                                 ToStringFunc="@(m => m == null ? "" : $"{m.Name} ({m.Shape})")"
+                                                                 ToStringFunc="@(m => m == null ? "" : $"{m.Name}")"
                                                                  Variant="Variant.Text"
-                                                                 Placeholder="Start typing resource..."
+                                                                 Placeholder="Material..."
+                                                                 Margin="Margin.Dense"
                                                                  Dense="true" />
                                             </td>
-                                            <td>
+                                            <td style="padding: 4px 6px;">
                                                 <MudNumericField T="decimal" 
                                                                 Value="row.Quantity" 
                                                                 ValueChanged="@(v => { row.Quantity = v; RecalcRow(row); })" 
@@ -153,16 +147,16 @@
                                                                 HideSpinButtons="true" 
                                                                 Class="@(row.SelectedMaterial != null && row.Quantity > row.SelectedMaterial.StockMT ? "audit-quantity-error" : "audit-quantity-normal")" 
                                                                 Error="@(row.SelectedMaterial != null && row.Quantity > row.SelectedMaterial.StockMT)"
-                                                                ErrorText="Exceeds stock"
-                                                                Margin="Margin.Dense" />
+                                                                Margin="Margin.Dense"
+                                                                Dense="true" />
                                             </td>
-                                            <td>
-                                                <MudNumericField T="decimal" Value="row.UnitPrice" ValueChanged="@(v => { row.UnitPrice = v; RecalcRow(row); })" Variant="Variant.Text" HideSpinButtons="true" Class="audit-unit-price" Margin="Margin.Dense" />
+                                            <td style="padding: 4px 6px;">
+                                                <MudNumericField T="decimal" Value="row.UnitPrice" ValueChanged="@(v => { row.UnitPrice = v; RecalcRow(row); })" Variant="Variant.Text" HideSpinButtons="true" Margin="Margin.Dense" Dense="true" />
                                             </td>
-                                            <td class="text-right">
-                                                <span class="audit-row-total">₹ @row.TotalPrice.ToString("N0")</span>
+                                            <td class="text-right" style="padding: 4px 6px;">
+                                                <span class="audit-row-total" style="font-size: 0.75rem; font-weight: 700;">₹@row.TotalPrice.ToString("N0")</span>
                                             </td>
-                                            <td class="text-center">
+                                            <td class="text-center" style="padding: 4px 2px;">
                                                 <MudIconButton Icon="@Icons.Material.Filled.DeleteOutline" Color="Color.Error" Size="Size.Small" OnClick="() => RemoveRow(row)" />
                                             </td>
                                         </tr>
@@ -170,42 +164,42 @@
                                 </tbody>
                             </table>
 
-                            <div class="insert-line-container" @onclick="AddRow">
-                                <MudIcon Icon="@Icons.Material.Filled.Add" Class="insert-line-icon" />
-                                <span>Insert Audit Line</span>
+                            <div class="insert-line-container" @onclick="AddRow" style="padding: 6px 12px; font-size: 0.8rem;">
+                                <MudIcon Icon="@Icons.Material.Filled.Add" Class="insert-line-icon" style="font-size: 1rem;" />
+                                <span>Insert Line</span>
                             </div>
                         </div>
                     </div>
 
                     <!-- Supplemental Modals -->
                     <div class="terra-card">
-                        <span class="section-headline">OPERATIONAL LOGISTICS</span>
-                        <MudGrid Spacing="3">
+                        <span class="section-headline" style="font-size: 0.75rem;">OPERATIONAL LOGISTICS</span>
+                        <MudGrid Spacing="2">
                             <MudItem xs="12" md="6">
-                                <span class="section-headline sub-headline">BHADA AMOUNT</span>
+                                <span class="section-headline sub-headline" style="font-size: 0.7rem;">BHADA</span>
                                 <MudTextField @bind-Value="BhadaAmount" Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.LocalShipping" AdornmentColor="Color.Primary" Margin="Margin.Dense" />
                             </MudItem>
                             <MudItem xs="12" md="6">
-                                <span class="section-headline sub-headline">GSTIN / REMARKS</span>
+                                <span class="section-headline sub-headline" style="font-size: 0.7rem;">GSTIN / REMARKS</span>
                                 <MudTextField @bind-Value="GstinValue" Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Notes" AdornmentColor="Color.Secondary" Margin="Margin.Dense" />
                             </MudItem>
                         </MudGrid>
                     </div>
 
-                    <div class="footer-actions">
-                        <button class="footer-btn-commit" @onclick="GenerateInvoice" disabled="@IsSaving">
-                            <MudIcon Icon="@Icons.Material.Filled.CloudUpload" Class="footer-btn-icon" />
-                            <span>Commit Final Audit</span>
+                    <div class="footer-actions" style="gap: 8px;">
+                        <button class="footer-btn-commit" @onclick="GenerateInvoice" disabled="@IsSaving" style="padding: 8px 12px; font-size: 0.8rem;">
+                            <MudIcon Icon="@Icons.Material.Filled.CloudUpload" Class="footer-btn-icon" style="font-size: 1rem;" />
+                            <span>Commit</span>
                         </button>
-                        <button class="footer-btn-archive" @onclick="SaveAsDraft" disabled="@IsSaving">
-                            <MudIcon Icon="@Icons.Material.Filled.FolderOpen" Class="footer-btn-icon" />
-                            <span>Archive Draft</span>
+                        <button class="footer-btn-archive" @onclick="SaveAsDraft" disabled="@IsSaving" style="padding: 8px 12px; font-size: 0.8rem;">
+                            <MudIcon Icon="@Icons.Material.Filled.FolderOpen" Class="footer-btn-icon" style="font-size: 1rem;" />
+                            <span>Archive</span>
                         </button>
                         @if (!string.IsNullOrEmpty(GeneratedBillNumber))
                         {
-                            <button class="footer-btn-download" @onclick="DownloadBill">
-                                <MudIcon Icon="@Icons.Material.Filled.DownloadDone" Class="footer-btn-icon" />
-                                <span>Download Documentation</span>
+                            <button class="footer-btn-download" @onclick="DownloadBill" style="padding: 8px 12px; font-size: 0.8rem;">
+                                <MudIcon Icon="@Icons.Material.Filled.DownloadDone" Class="footer-btn-icon" style="font-size: 1rem;" />
+                                <span>Download</span>
                             </button>
                         }
                     </div>
@@ -214,37 +208,37 @@
 
             <!-- Right Side: Sticky Audit Node -->
             <MudItem xs="12" lg="4">
-                <div class="sticky-audit-node">
-                    <div class="terra-card">
-                        <span class="section-headline">AUDIT SUMMARY</span>
-                        
-                        <div class="audit-summary-item">
-                            <span class="audit-summary-label">Aggregate Base</span>
-                            <span class="audit-summary-value">₹ @SubTotal.ToString("N0")</span>
+                <div class="sticky-audit-node" style="gap: 12px;">
+                    <div class="terra-card" style="padding: 12px;">
+                        <span class="section-headline" style="font-size: 0.75rem;">AUDIT SUMMARY</span>
+
+                        <div class="audit-summary-item" style="padding: 6px 0; gap: 8px;">
+                            <span class="audit-summary-label" style="font-size: 0.75rem;">Aggregate Base</span>
+                            <span class="audit-summary-value" style="font-size: 0.85rem;">₹@SubTotal.ToString("N0")</span>
                         </div>
 
-                        <div class="audit-summary-item">
-                            <span class="audit-summary-label">Logistics (Bhada)</span>
-                            <span class="audit-summary-value">₹ @BhadaAmount.ToString("N0")</span>
+                        <div class="audit-summary-item" style="padding: 6px 0; gap: 8px;">
+                            <span class="audit-summary-label" style="font-size: 0.75rem;">Logistics (Bhada)</span>
+                            <span class="audit-summary-value" style="font-size: 0.85rem;">₹@BhadaAmount.ToString("N0")</span>
                         </div>
 
                         @if (LabourAmount > 0)
                         {
-                            <div class="audit-summary-item">
-                                <span class="audit-summary-label">Operational Labour</span>
-                                <span class="audit-summary-value">₹ @LabourAmount.ToString("N0")</span>
+                            <div class="audit-summary-item" style="padding: 6px 0; gap: 8px;">
+                                <span class="audit-summary-label" style="font-size: 0.75rem;">Labour</span>
+                                <span class="audit-summary-value" style="font-size: 0.85rem;">₹@LabourAmount.ToString("N0")</span>
                             </div>
                         }
 
-                        <div class="divider-dashed"></div>
+                        <div class="divider-dashed" style="margin: 6px 0;"></div>
 
-                        <span class="section-headline mb-4-px">FINAL VALUATION</span>
-                        <div class="final-valuation-container">
-                            <div class="valuation-number-box">
-                                <span class="currency-symbol">₹</span>
-                                <span class="valuation-amount">@Math.Round(GrandTotal).ToString("N0")</span>
+                        <span class="section-headline" style="font-size: 0.75rem; margin-bottom: 2px;">FINAL VALUATION</span>
+                        <div class="final-valuation-container" style="margin-top: 6px;">
+                            <div class="valuation-number-box" style="gap: 2px;">
+                                <span class="currency-symbol" style="font-size: 1rem;">₹</span>
+                                <span class="valuation-amount" style="font-size: 1.2rem;">@Math.Round(GrandTotal).ToString("N0")</span>
                             </div>
-                            <MudIcon Icon="@Icons.Material.Filled.BarChart" Class="valuation-chart-icon" />
+                            <MudIcon Icon="@Icons.Material.Filled.BarChart" Class="valuation-chart-icon" style="font-size: 1.2rem;" />
                         </div>
                     </div>
 
